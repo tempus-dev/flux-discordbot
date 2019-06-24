@@ -1,6 +1,13 @@
-# Flux Discord Bot
+<h1 align="center">
+  <br>
+  <a href="https://github.com/Priultimus/flux-discordbot"><img src="https://cdn.discordapp.com/attachments/552561760566116382/592807212485836811/hack_wump_ship.png" alt="Flux"></a>
+   Our Hack Week Project! </br>
+</h1>
 
-Your one stop shop for everything productivity. Opus is specifically designed to help you stay on track, and make sure your peers work together well too!
+
+# Flux
+
+Your one stop shop for everything productivity. Flux is specifically designed to help you stay on track, and make sure your peers work together well too!
 
 
 
