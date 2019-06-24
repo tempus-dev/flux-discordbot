@@ -1,4 +1,4 @@
-# Opus
+# Flux Discord Bot
 
 Your one stop shop for everything productivity. Opus is specifically designed to help you stay on track, and make sure your peers work together well too!
 
