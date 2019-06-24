@@ -56,6 +56,7 @@ Below contains everything related to the development of the bot.
 ### Run Bot
 
 - Start by installing the requirements with `python3 -m pip install -r requirements.txt`
+- Then, replace `config.json.example` with `config.json` and add in your own token.
 - Then do `python3 main.py` to have it start!
 
 ### Rules
