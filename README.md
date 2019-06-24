@@ -4,7 +4,7 @@ Your one stop shop for everything productivity. Opus is specifically designed to
 
 
 
-## Features 
+## Detailed Feature List 
 
 This details all the features of the bot. 
 
