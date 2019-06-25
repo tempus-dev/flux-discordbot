@@ -1,6 +1,8 @@
 import time
+
 import discord
 from discord.ext import commands
+
 
 class Developer(commands.Cog, name="Developer"):
     """This cog contains all commands related to the development and maintence of Flux."""
