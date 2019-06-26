@@ -1,5 +1,5 @@
 {
     "token": "your-token-here",
-    "uri": "localhost"
+    "uri": "localhost",
     "db": "flux"
 }

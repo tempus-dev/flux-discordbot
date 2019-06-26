@@ -66,19 +66,20 @@ class Bot(commands.AutoShardedBot):
     def connect_to_mongo(self):
         db_client = MongoClient(self.config.uri)[self.config.db]
         try:
-           db_client.collection_names()
+            db_client.collection_names()
         except Exception:
             db_client = None
             logger.warning("MongoDB connection failed. There will be no MongoDB support.")
         return db_client
 
-
     async def on_ready(self):
-        self.load_extension('ui.developer')
+        extensions = ['ui.developer', 'ui.guidance']
+        for i in extensions:
+            self.load_extension(i)
         game = discord.Game("Unfinished.")
         await self.change_presence(status=discord.Status.dnd, activity=game)
         self.db_client = await self.loop.run_in_executor(None, self.connect_to_mongo)
         print("Running.")
-    
 
-flux = Bot(command_prefix=commands.when_mentioned_or("."))
+
+flux = Bot(command_prefix=commands.when_mentioned_or("$"), help_command=None)

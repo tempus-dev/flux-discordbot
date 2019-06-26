@@ -7,15 +7,18 @@ import inspect
 import textwrap
 import traceback
 from contextlib import redirect_stdout
+from handlers.pathing import path
 
 import git
 import discord
 from discord.ext import commands
 
+
 class Developer(commands.Cog, name="Developer"):
     """This cog contains all commands related to the development and maintence of Flux."""
 
-    def __init__(self):
+    def __init__(self, bot):
+        self.bot = bot
         self._last_result = None
 
     async def cog_check(self, ctx):
@@ -143,7 +146,6 @@ class Developer(commands.Cog, name="Developer"):
                 for page in pagify(text=f"{value}{ret}"):
                     return await ctx.send(box(page, lang="py"))
 
-
     @commands.command()
     async def ping(self, ctx) -> discord.Message:
         before = time.monotonic()
@@ -154,6 +156,38 @@ class Developer(commands.Cog, name="Developer"):
         await message.delete()
         await ctx.send(f"🏓 | My ping is **{ping}ms!**")
 
+    @commands.command(name='r')
+    async def reload(self, ctx):
+        """Reloading all the cogs"""
+        broken_cogs = []
+        extensions = [f'ui.{x[:-3]}' for x in os.listdir(path('ui')) if all(((x[-3:] == '.py'), (x != '__init__.py')))]
+        for i in extensions:
+            try:
+                self.bot.unload_extension(i)
+                self.bot.load_extension(i)
+            except commands.ExtensionNotLoaded:
+                self.bot.load_extension(i)
+            except Exception as e:
+                broken_cogs.append(f'{i}: [{type(e).__name__} - {e}]\n')
+                continue
+        if len(broken_cogs) >= 1:
+            broken_cogs = '\n'.join(str(y) for y in broken_cogs)
+            await ctx.send(f'**Broken cogs(s):**\n```css\n{broken_cogs}```', delete_after=30)
+        else:
+            await ctx.send(f'**{len(extensions)}** cog(s) successfully loaded', delete_after=10)
+
+    @commands.command()
+    async def exit(self, ctx):
+        """Logs out the bot"""
+        print('Logging out')
+        await ctx.bot.logout()
+
+    @commands.command()
+    async def embeding(self, ctx):
+        embed = discord.Embed(name='Test embed', value='another test', colour=0xc27c0e, timestamp=now())
+        embed.add_field(name=f'Greetings, human! (assuming)', value='Like, prepare to do things and stuff man', inline=False)
+        await ctx.send(embed=embed)
+
 
 def setup(bot):
-    bot.add_cog(Developer())
+    bot.add_cog(Developer(bot))

@@ -10,3 +10,10 @@ def path(*objects):
     for i in objects:
         newPath.append(i)
     return (os.sep).join(str(y) for y in newPath)
+
+
+def now():
+    """
+    Returns the time depending on time zone (will look at file soon)
+    """
+    return datetime.datetime.now() + datetime.timedelta(hours=7)
