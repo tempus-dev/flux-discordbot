@@ -7,7 +7,7 @@ import inspect
 import textwrap
 import traceback
 from contextlib import redirect_stdout
-from handlers.pathing import path
+from handlers.pathing import path, now
 
 import git
 import discord
