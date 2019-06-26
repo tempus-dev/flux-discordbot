@@ -160,7 +160,10 @@ class Developer(commands.Cog, name="Developer"):
     async def reload(self, ctx):
         """Reloading all the cogs"""
         broken_cogs = []
-        extensions = [f'ui.{x[:-3]}' for x in os.listdir(path('ui')) if all(((x[-3:] == '.py'), (x != '__init__.py')))]
+        extensions = []
+        folders = ['ui']
+        for folder in folders:
+            extensions.extend([f'{folder}.{x[:-3]}' for x in os.listdir(path(folder)) if all(((x[-3:] == '.py'), (x != '__init__.py')))])
         for i in extensions:
             try:
                 self.bot.unload_extension(i)
@@ -174,7 +177,7 @@ class Developer(commands.Cog, name="Developer"):
             broken_cogs = '\n'.join(str(y) for y in broken_cogs)
             await ctx.send(f'**Broken cogs(s):**\n```css\n{broken_cogs}```', delete_after=30)
         else:
-            await ctx.send(f'**{len(extensions)}** cog(s) successfully loaded', delete_after=10)
+            await ctx.send(f'**{len(extensions)}** cog(s) successfully reloaded', delete_after=10)
 
     @commands.command()
     async def exit(self, ctx):
