@@ -8,6 +8,7 @@ import textwrap
 import traceback
 from contextlib import redirect_stdout
 from handlers.pathing import path, now
+from handlers.scheduling import Scheduler
 
 import git
 import discord
@@ -190,6 +191,14 @@ class Developer(commands.Cog, name="Developer"):
         embed = discord.Embed(name='Test embed', value='another test', colour=0xc27c0e, timestamp=now())
         embed.add_field(name=f'Greetings, human! (assuming)', value='Like, prepare to do things and stuff man', inline=False)
         await ctx.send(embed=embed)
+
+    @commands.command()
+    async def schedule(self, ctx, duration: int):
+        async def cb(msg):
+            await ctx.send(f"Schedule expired:\n{msg}")
+
+        Scheduler.schedule(time.time() + duration, cb("Test successful!"))
+        await ctx.send("Schedule created.")
 
 
 def setup(bot):
