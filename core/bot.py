@@ -97,7 +97,12 @@ class Bot(commands.AutoShardedBot):
         await self.change_presence(status=discord.Status.dnd, activity=game)
         self.db_client = await self.loop.run_in_executor(None, self.connect_to_mongo)
         self.reminders = ReminderService(self)
-        print("Running.")
+        print("Ready.")
+
+    async def on_resumed(self):
+        game = discord.Game("Unfinished.")
+        await self.change_presence(status=discord.Status.dnd, activity=game)
+        print("Resumed.")
 
 
 
