@@ -167,6 +167,5 @@ class Tasks(commands.Cog, name="Tasks"):
         return await channel.send(f"**> Task revoked:** The task `{task_name}` was marked as incomplete. The bounty of `{task_reward}` points is back up.")
         
 
-
-                
-        
+def setup(bot):
+    bot.add_cog(Tasks(bot))

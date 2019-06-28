@@ -105,4 +105,5 @@ class Projects(commands.Cog, name="Projects"):
             members = members + f" and `{last_member}`"
             return await channel.send(f"**> Member Update:** {members} were added to this project.")
         
-        
+def setup(bot):
+    bot.add_cog(Projects(bot))
