@@ -10,13 +10,13 @@ class ProjectHandler:
     def __init__(self, guild: int):
         self.guild = str(guild)
     
-    async def create_project(self, owner: int, name: int, channel: int) -> dict:
+    async def create_project(self, owner: int, name: str, channel: int) -> dict:
         """This creates a project."""
         project = {
             "name": name,
             "tasks": [],
-            "owner": owner,
-            "channel": channel
+            "owner": str(owner),
+            "channel": str(channel)
         }
         guild_db = flux.db("guilds").find(self.guild)
         if guild_db is None:
