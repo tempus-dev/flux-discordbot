@@ -30,9 +30,9 @@ class ReminderService:
     def __init__(self, bot):
         self.bot = bot
 
-    async def new_reminder(self, author_id, message, time):
-        reminder = Reminder(str(uuid4()), str(author_id), message, time)
-        print(reminder)
+    async def new_reminder(self, author_id: int, message: str, time: datetime):
+        total_seconds = (datetime.datetime.now() - time).seconds
+        reminder = Reminder(str(uuid4()), str(author_id), message, total_seconds)
         data = reminder.serialize()
         name = data["id"]
         data.pop("id")
