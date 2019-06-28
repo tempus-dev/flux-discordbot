@@ -157,43 +157,61 @@ class Developer(commands.Cog, name="Developer"):
         await message.delete()
         await ctx.send(f"🏓 | My ping is **{ping}ms!**")
 
-    @commands.command(name='r')
-    async def reload(self, ctx):
-        """Reloading all the cogs"""
-        broken_cogs = []
-        extensions = []
-        folders = ['ui']
-        for folder in folders:
-            extensions.extend([f'{folder}.{x[:-3]}' for x in os.listdir(path(folder)) if all(((x[-3:] == '.py'), (x != '__init__.py')))])
-        for i in extensions:
+    @commands.command()
+    async def load(self, ctx, module: str) -> discord.Message:
+        """Loads cogs/modules from the bot."""
+        try:
+            ctx.bot.load_extension(module)
+            return await ctx.send(f"Loaded `{module}`!")
+        except ModuleNotFoundError:
+            return await ctx.send("Couldn't find that module!")
+        except Exception as e:
+            error = ("Exception in loading module '{}'\n"
+              "".format(module))
+            error += "".join(traceback.format_exception(type(e), e,
+                            e.__traceback__))
             try:
-                self.bot.unload_extension(i)
-                self.bot.load_extension(i)
-            except commands.ExtensionNotLoaded:
-                self.bot.load_extension(i)
-            except Exception as e:
-                broken_cogs.append(f'{i}: [{type(e).__name__} - {e}]\n')
-                continue
-        if len(broken_cogs) >= 1:
-            broken_cogs = '\n'.join(str(y) for y in broken_cogs)
-            await ctx.send(f'**Broken cogs(s):**\n```css\n{broken_cogs}```', delete_after=30)
-        else:
-            await ctx.send(f'**{len(extensions)}** cog(s) successfully reloaded', delete_after=10)
+                await ctx.author.send(error)
+            except discord.errors.Forbidden:
+                return await ctx.send("Couldn't load that module!")
+
+            return await ctx.send("Couldn't load that module! "
+                                 "Sent you the error in DMs.")
 
     @commands.command()
-    async def exit(self, ctx):
-        """Logs out the bot"""
-        print('Logging out')
-        await ctx.bot.logout()
+    async def unload(self, ctx, module: str) -> discord.Message:
+        """Unloads cogs/modules from the bot."""
+        try:
+            ctx.bot.unload_extension(module)
+        except commands.errors.ExtensionNotLoaded:
+            return await ctx.send("That module either isn't loaded or doesn't exist.")
+        return await ctx.send(f"Unloaded `{module}`!")
 
     @commands.command()
-    async def embeding(self, ctx):
-        embed = discord.Embed(name='Test embed', value='another test', colour=0xc27c0e, timestamp=now())
-        embed.add_field(name=f'Greetings, human! (assuming)', value='Like, prepare to do things and stuff man', inline=False)
-        await ctx.send(embed=embed)
+    async def reload(self, ctx, module: str) -> discord.Message:
+        """Reloads cogs/modules from the bot."""
+        try:
+            ctx.bot.unload_extension(module)
+            ctx.bot.load_extension(module)
+            return await ctx.send(f"Reloaded `{module}`!")
+        except ModuleNotFoundError:
+            return await ctx.send("Couldn't find that module.")
+        except commands.errors.ExtensionNotLoaded:
+            return await ctx.send("That module either doesn't exist or was never loaded.")
+        except Exception as e:
+            error = ("Exception in loading module '{}'\n"
+              "".format(module))
+            error += "".join(traceback.format_exception(type(e), e,
+                            e.__traceback__))
+            try:
+                await ctx.author.send(error)
+            except discord.errors.Forbidden:
+                return await ctx.send("Couldn't load that module!")
+            return await ctx.send("Couldn't load that module! "
+                                 "Sent you the error in DMs.")
 
     @commands.command()
-    async def schedule(self, ctx, duration: int):
+    async def schedule(self, ctx, duration: int) -> None:
         async def cb(msg):
             await ctx.send(f"Schedule expired:\n{msg}")
 
