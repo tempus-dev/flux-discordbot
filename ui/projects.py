@@ -10,7 +10,7 @@ from handlers.projects import ProjectHandler
 
 
 class Projects(commands.Cog, name="Projects"):
-    """This handles the projects on the userside."""
+    """This creates and handles projects."""
 
     def __init__(self, bot):
         self.bot = bot
@@ -18,12 +18,15 @@ class Projects(commands.Cog, name="Projects"):
 
     @commands.group()
     async def projects(self, ctx) -> None:
+        """Project related commands."""
         pass
 
     @commands.has_permissions(manage_channels=True)
     @projects.command()
     async def create(self, ctx, name: str, owner: discord.Member=None) -> discord.Message:
-        """This creates a project."""
+        """This creates a project.
+        
+        You can set the owner to be someone other than you by providing a member."""
         owner = owner if owner is not None else ctx.author
         projects = ProjectHandler(ctx.guild.id)
 
@@ -57,7 +60,9 @@ class Projects(commands.Cog, name="Projects"):
 
     @projects.command()
     async def add(self, ctx, project: str, members: commands.Greedy[discord.Member]) -> discord.Message:
-        """This adds as many project members as you want to your project."""
+        """This adds as many project members as you want to your project.
+        
+        This command is limited to the project owner only."""
         projects = ProjectHandler(ctx.guild.id)
         if str(ctx.author.id) not in projects.find_project(project).get("owner"):
             return await ctx.send("You can't add members to this project.  o.o")

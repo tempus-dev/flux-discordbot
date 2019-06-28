@@ -26,9 +26,6 @@ class ProjectHandler:
         filledLength = int(length * iteration // total)
         bar = fill * filledLength + '-' * (length - filledLength)
         progress_bar = "\r%s |%s| %s%% %s" % (prefix, bar, percent, suffix)
-        # Print New Line on Complete
-        if iteration == total: 
-            progress_bar + "\n"
         return progress_bar
 
     async def create_project(self, owner: int, member: int, name: str, channel: int, message: int) -> dict:

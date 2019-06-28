@@ -13,7 +13,7 @@ from handlers.points import Points
 
 
 class Tasks(commands.Cog, name="Tasks"):
-    """This handles the tasks on the userside."""
+    """This manages tasks in a project."""
 
     def __init__(self, bot):
         self.bot = bot
@@ -32,11 +32,14 @@ class Tasks(commands.Cog, name="Tasks"):
 
     @commands.group()
     async def tasks(self, ctx) -> None:
+        """Task related commands."""
         pass
 
     @tasks.command()
     async def create(self, ctx, name: str, project: str, reward: int, *due) -> discord.Message:
-        """This creates a task."""
+        """This creates a task.
+        
+        This command is limited to the owner of the provided project."""
         projects = ProjectHandler(ctx.guild.id)
         if str(ctx.author.id) not in projects.find_project(project).get("owner"):
             return await ctx.send("You can't create tasks on this project.  o.o")
@@ -47,7 +50,9 @@ class Tasks(commands.Cog, name="Tasks"):
 
     @tasks.command()
     async def assign(self, ctx, task: str, project: str, members: commands.Greedy[discord.Member]) -> discord.Message:
-        """This assigns members to a project."""
+        """This assigns members to a project.
+        
+        This command is limited to the owner of the provided project."""
         projects = ProjectHandler(ctx.guild.id)
         if str(ctx.author.id) not in projects.find_project(project).get("owner"):
             return await ctx.send("You can't assign members to this task.  o.o")
@@ -71,7 +76,9 @@ class Tasks(commands.Cog, name="Tasks"):
 
     @tasks.command()
     async def complete(self, ctx, task: str, project: str) -> discord.Message:
-        """This marks a task as complete."""
+        """This marks a task as complete.
+        
+        This command is limited to the owner of the provided project, and the members assigned to the provided task."""
         projects = ProjectHandler(ctx.guild.id)
         if str(ctx.author.id) not in projects.find_project(project).get("owner") and str(ctx.author.id) not in task.get("assigned"):
             return await ctx.send("You can't mark this task as complete.  o.o")
@@ -80,7 +87,9 @@ class Tasks(commands.Cog, name="Tasks"):
 
     @tasks.command()
     async def incomplete(self, ctx, task: str, project: str) -> discord.Message:
-        """This marks a task as incomplete."""
+        """This marks a task as incomplete.
+        
+        This command is limited to the owner of the provided project, and the members assigned to the provided task."""
         projects = ProjectHandler(ctx.guild.id)
         if str(ctx.author.id) not in projects.find_project(project).get("owner") and str(ctx.author.id) not in task.get("assigned"):
             return await ctx.send("You can't mark this task as incomplete.  o.o")
@@ -134,7 +143,8 @@ class Tasks(commands.Cog, name="Tasks"):
         channel = discord.utils.get(guild.channels, id=projects.find_project(task.get("project")).get("channel"))
         task_name = task.get("name")
         task_reward = task.get("reward")
-        # TODO: update progress bar
+        message = await channel.fetch_message(int(projects.find_project(task.get("project")).get("message")))
+        await message.edit(content=projects.project_progress_bar(task.get("projects")))
         return await channel.send(f"**> Task completion:** The task `{task_name}` was completed and the bounty of `{task_reward}` points has been claimed!")
 
     @commands.Cog.listener()
