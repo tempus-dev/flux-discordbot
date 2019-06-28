@@ -95,7 +95,7 @@ class Bot(commands.AutoShardedBot):
         return db_client
 
     async def on_ready(self):
-        extensions = ['ui.developer', 'ui.guidance']
+        extensions = ['ui.developer', 'ui.general', 'ui.projects', 'ui.tasks']
         for i in extensions:
             self.load_extension(i)
         game = discord.Game("Unfinished.")
