@@ -20,6 +20,11 @@ class Mongo:
     def __init__(self, db_client, collection):
         self.db_client = db_client
         self.collection = getattr(self.db_client, collection) if db_client is not None else None
+        self.empty_guild = {
+            "projects": [],
+            "points": [],
+            "project_category": None
+        }
 
     def find(self, name, pretty=False):
         if not self.db_client:

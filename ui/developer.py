@@ -148,16 +148,6 @@ class Developer(commands.Cog, name="Developer"):
                     return await ctx.send(box(page, lang="py"))
 
     @commands.command()
-    async def ping(self, ctx) -> discord.Message:
-        before = time.monotonic()
-        message = await ctx.send("Pinging...")
-        await ctx.trigger_typing()
-        ping = (time.monotonic() - before) * 1000
-        ping = round(ping)
-        await message.delete()
-        await ctx.send(f"🏓 | My ping is **{ping}ms!**")
-
-    @commands.command()
     async def load(self, ctx, module: str) -> discord.Message:
         """Loads cogs/modules from the bot."""
         try:
