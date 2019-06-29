@@ -90,7 +90,6 @@ class General(commands.Cog, name="General"):
         points = ctx.bot.db("guilds").find(str(ctx.guild.id)).get("points")
         if points is None:
             ctx.bot.db("guilds").update(str(ctx.guild.id), {"points": {}})
-            points = {"points": {}}
             return await ctx.send("No one has any points.  o.o")
         users = {}
         for k, v in points.items():

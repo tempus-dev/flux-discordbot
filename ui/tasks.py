@@ -59,7 +59,7 @@ class Tasks(commands.Cog, name="Tasks"):
 
         if str(ctx.author.id) not in ctx.projects.find_project(project).get("owner"):
             return await ctx.send("You can't assign members to this task.  o.o")
-        members = members if len(members) > 0 else ctx.author
+        members = members if len(members) > 0 else [ctx.author]
         count = len(members)
         ctx.projects.update_task_members(project, task, [x.id for x in members])
         if members == ctx.author:
@@ -141,8 +141,7 @@ class Tasks(commands.Cog, name="Tasks"):
         value = self.bot.db("guilds").find(guild_id).get("projects")[project.get('number')].get("tasks")[task.get("number")]["value"]
         start_timestamp = (datetime.datetime.now() - task.get("start_timestamp")).total_seconds()
         end_timestamp = (task.get("end_timestamp") - datetime.datetime.now()).total_seconds()
-        points = pointhandler.calculate_points(start_timestamp, end_timestamp, value)
-        pointhandler.add_points(guild_id, task, points)
+        pointhandler.add_points(guild_id, task, value)
 
         channel = await self.bot.fetch_channel(int(project.get("channel")))
         task_name = task.get("name")

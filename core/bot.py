@@ -78,7 +78,7 @@ class Bot(commands.Bot):
         super().__init__(*args, **kwargs)
         self.empty_guild = {
             "projects": [],
-            "points": [],
+            "points": {},
             "project_category": None
         }
         with open("./config.json", "r", encoding="utf8") as file:
@@ -103,13 +103,13 @@ class Bot(commands.Bot):
         await self.change_presence(status=discord.Status.dnd, activity=game)
         self.db_client = await self.loop.run_in_executor(None, self.connect_to_mongo)
         self.reminders = ReminderService(self)
-        extensions = ['ui.developer', 'ui.general', 'ui.projects', 'ui.tasks']
+        extensions = ['ui.general', 'ui.projects', 'ui.tasks']
         for i in extensions:
             self.load_extension(i)
         print("Ready.")
 
     async def on_resumed(self):
-        game = discord.Game("Unfinished.")
+        game = discord.Game(".help for help!")
         await self.change_presence(status=discord.Status.dnd, activity=game)
         print("Resumed.")
 
