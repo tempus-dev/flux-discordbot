@@ -28,7 +28,7 @@ class ProjectHandler:
         progress_bar = "\r%s |%s| %s%% %s" % (prefix, bar, percent, suffix)
         return progress_bar
 
-    async def create_project(self, owner: int, member: int, name: str, channel: int, message: int) -> dict:
+    def create_project(self, owner: int, member: int, name: str, channel: int, message: int) -> dict:
         """This creates a project."""
         project = {
             "name": name,
@@ -50,7 +50,7 @@ class ProjectHandler:
         flux.dispatch("project_created", name)
         return project
 
-    async def find_project(self, name: str) -> dict:
+    def find_project(self, name: str) -> dict:
         """This searches for a project within a given guild."""
         guild = flux.db("guilds").find(self.guild)
         projects = guild.get("projects")
@@ -58,14 +58,14 @@ class ProjectHandler:
             return
         return next((item for item in projects if item["name"] == name), None)
 
-    async def update_project_channel(self, project: str, channel: int) -> dict:
+    def update_project_channel(self, project: str, channel: int) -> dict:
         """This updates the channel that contains the quick information display."""
         project = self.find_project(project)
         project["channel"] = channel
         flux.db("guilds").update(self.guild, project)
         return project
 
-    async def project_completion(self, project: str) -> int:
+    def project_completion(self, project: str) -> int:
         """This returns how close a project is to completion, out of 100."""
         guild = flux.db("guilds").find(self.guild)
         if guild is None or guild.get("projects") is None:
@@ -81,7 +81,7 @@ class ProjectHandler:
             return 0
         return round(completed_tasks/tasks*100)
 
-    async def project_progress_bar(self, project: str) -> int:
+    def project_progress_bar(self, project: str) -> int:
         """This returns how close a project is to completion, out of 100."""
         guild = flux.db("guilds").find(self.guild)
         if guild is None or guild.get("projects") is None:
@@ -97,7 +97,7 @@ class ProjectHandler:
             return 0
         return self.generate_progress_bar(completed_tasks, tasks, prefix="Project Progress:", suffix="Complete")
 
-    async def add_project_members(self, project: str, members: list) -> dict:
+    def add_project_members(self, project: str, members: list) -> dict:
         """This adds a project member to the member list."""
         project = self.find_project(project)
         current_owners = project.get('members')
@@ -107,7 +107,7 @@ class ProjectHandler:
         flux.dispatch("project_member_add", self.guild, project, members)
         return project
 
-    async def create_task(self, project: str, name: str, value: int, due: datetime.datetime) -> dict:
+    def create_task(self, project: str, name: str, value: int, due: datetime.datetime) -> dict:
         """This creates a task within a project."""
         task = {
             "name": name,
@@ -124,13 +124,13 @@ class ProjectHandler:
         flux.dispatch("task_create", self.guild, task)
         return task
 
-    async def find_task(self, project: str, task: str) -> dict:
+    def find_task(self, project: str, task: str) -> dict:
         """This searches for a task within a given project, within a given guild."""
         project = self.find_project(project)
         task = next((item for item in project.get("tasks") if item["name"] == task), None)
         return task
 
-    async def update_task_members(self, project: str, task: str, member: list) -> dict:
+    def update_task_members(self, project: str, task: str, member: list) -> dict:
         """This assigns a member to a task."""
         task = self.find_task(project, task)
         task["members"].extend(member)
@@ -138,13 +138,13 @@ class ProjectHandler:
         flux.dispatch("task_member_update", task, int(self.guild), member)
         return task
 
-    async def update_task_value(self, project: str, task: str, value: int) -> dict:
+    def update_task_value(self, project: str, task: str, value: int) -> dict:
         """This modifies the value of a task."""
         task = self.find_task(project, task)
         task["value"] += value
         flux.db("guilds").update(self.guild, task)
 
-    async def update_task_status(self, project: str, task: str, status: bool) -> dict:
+    def update_task_status(self, project: str, task: str, status: bool) -> dict:
         """This marks a task as completed."""
         task = self.find_task(project, task)
         if task.get("completed") == status:
