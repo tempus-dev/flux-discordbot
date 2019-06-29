@@ -118,7 +118,7 @@ class ProjectHandler:
             "value": value,
             "project": project
         }
-        project = await self.find_project(project)
+        project = self.find_project(project)
         project.get("tasks").append(task)
         flux.db("guilds").update(self.guild, project)
         flux.dispatch("task_create", self.guild, task)
