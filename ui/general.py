@@ -46,21 +46,27 @@ class General(commands.Cog, name="General"):
                     embed = discord.Embed(color=ctx.author.color)
                     embed.set_author(name=cog.qualified_name, icon_url=ctx.bot.user.avatar_url)
                     commands = list(cog.walk_commands())
-                    cmd_text = "Commands:"
+                    embed.add_field(name="Commands:", value=":stop_button: To stop at any time.")
                     for command in commands:
                         if isinstance(command, discord.ext.commands.Group):
                             continue
                         if command.parent:
-                            cmd_text = cmd_text + f"\n**{ctx.prefix}{command.parent} {command.name}**"
+                            params = command.clean_params
+                            params = "<" + ">, <".join(params) + ">"
+                            embed.add_field(name=f"**{ctx.prefix}{command.parent} {command.name}** {params}", value=command.help, inline=False)
                         else:
-                            cmd_text = cmd_text + f"\n**{ctx.prefix}{command.name}**"
-                    embed.add_field(name=cmd_text, value="\n:stop_button: To stop at any time.", inline=False)
+                            params = command.clean_params
+                            params = "<" + ">, <".join(params) + ">"
+                            if params == "<>":
+                                params = ""
+                            embed.add_field(name=f"**{ctx.prefix}{command.name}** {params}", value=command.help, inline=False)
                     embeds.append(embed)
         p = BotEmbedPaginator(ctx, embeds)
         return await p.run()
 
     @commands.command()
     async def ping(self, ctx) -> discord.Message:
+        """Ping pong!"""
         before = time.monotonic()
         message = await ctx.send("Pinging...")
         await ctx.trigger_typing()
@@ -71,20 +77,26 @@ class General(commands.Cog, name="General"):
 
     @commands.command()
     async def remind(self, ctx, to_remind: str, *time) -> discord.Message:
-        """A reminder command.
-        
-        You can have more than one word by putting your reminder message in quotations. ("reminder words")"""
+        """A reminder command. You can have more than one word by putting your reminder message in quotations. Example: "reminder words" """
         time = " ".join(time)
         time = self.parse_time(time)
-        ReminderService(ctx.bot).new_reminder(ctx.author.id, to_remind, time)
+        await ReminderService(ctx.bot).new_reminder(ctx.author.id, to_remind, time)
+        return await ctx.send("Reminder set!")
 
     @commands.command()
     async def leaderboard(self, ctx):
+        """This shows a leaderboard of all the points."""
         leaderboardhandler = Leaderboard()
         points = ctx.bot.db("guilds").find(str(ctx.guild.id)).get("points")
+        if points is None:
+            ctx.bot.db("guilds").update(str(ctx.guild.id), {"points": {}})
+            points = {"points": {}}
+            return await ctx.send("No one has any points.  o.o")
         users = {}
         for k, v in points.items():
             users[k] = {"points": v}
+        if users == {}:
+            return await ctx.send("No one has any points.  o.o")
 
         await leaderboardhandler.create(ctx, users, sort_by="points")
 

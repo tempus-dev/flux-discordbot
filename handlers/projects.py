@@ -36,14 +36,18 @@ class ProjectHandler:
             "owner": str(owner),
             "members": [str(member)],
             "channel": str(channel),
-            "message": str(message)
+            "message": str(message),
+            "number": None
         }
         guild_db = flux.db("guilds").find(self.guild)
         if guild_db is None:
+            project["number"] = 0
             flux.db("guilds").insert(self.guild, {"projects": [project]})
         elif guild_db.get("projects") is None:
+            project["number"] = 0
             flux.db("guilds").update(self.guild, {"projects": [project]})
         else:
+            project["number"] = len(guild_db.get("projects"))
             guild_db.get("projects").append(project)
             flux.db("guilds").update(self.guild, guild_db)
         
@@ -99,11 +103,13 @@ class ProjectHandler:
 
     def add_project_members(self, project: str, members: list) -> dict:
         """This adds a project member to the member list."""
+        guild_db = flux.db("guilds").find(self.guild)
         project = self.find_project(project)
         current_owners = project.get('members')
         current_owners.extend(members)
-        project["members"] = current_owners
-        flux.db("guilds").update(self.guild, project)
+        guild_db["projects"][project.get("number")]["members"] = current_owners
+        flux.db("guilds").update(self.guild, guild_db)
+
         flux.dispatch("project_member_add", self.guild, project, members)
         return project
 
@@ -116,7 +122,8 @@ class ProjectHandler:
             "completed": False,
             "assigned": [],
             "value": value,
-            "project": project
+            "project": project,
+            "number": None
         }
         project = self.find_project(project)
         project.get("tasks").append(task)

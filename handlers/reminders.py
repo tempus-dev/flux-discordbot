@@ -31,7 +31,7 @@ class ReminderService:
         self.bot = bot
 
     async def new_reminder(self, author_id: int, message: str, time: datetime):
-        total_seconds = (datetime.datetime.now() - time).seconds
+        total_seconds = (datetime.now() - time).seconds
         reminder = Reminder(str(uuid4()), str(author_id), message, total_seconds)
         data = reminder.serialize()
         name = data["id"]
