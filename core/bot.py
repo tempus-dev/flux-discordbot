@@ -3,6 +3,7 @@ import logging
 from bson.json_util import dumps
 from collections import namedtuple
 from datetime import timedelta
+from functools import wraps
 
 import discord
 from discord.ext import commands
@@ -12,6 +13,16 @@ from handlers.reminders import ReminderService
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def _ensure_database(func: callable):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if not self.db_client:
+            return None
+        return func(self, *args, **kwargs)
+
+    return wrapper
 
 
 class Mongo:
@@ -26,9 +37,8 @@ class Mongo:
             "project_category": None
         }
 
+    @_ensure_database
     def find(self, name, pretty=False):
-        if not self.db_client:
-            return None
         data = self.collection.find_one({"name": name})
         if pretty:
             return(dumps(data, sort_keys=True, indent=2))
@@ -38,35 +48,30 @@ class Mongo:
         """This returns all the documents in a given collection."""
         return self.collection.find({})
 
+    @_ensure_database
     def insert(self, name, value):
-        if not self.db_client:
-            return None
         document = {"name": name}
         document.update(value)
         return (self.collection.insert_one(document))
 
+    @_ensure_database
     def update(self, name, data):
-        if not self.db_client:
-            return None
         document = self.find(name)
         document.update(data)
         return self.save(document)
 
+    @_ensure_database
     def pop(self, name, key):
-        if not self.db_client:
-            return None
         document = self.find(name)
         document.pop(key, None)
         return self.save(document)
 
+    @_ensure_database
     def delete(self, name):
-        if not self.db_client:
-            return None
         return (self.collection.delete_one({"name": name}))
 
+    @_ensure_database
     def save(self, doc):
-        if not self.db_client:
-            return None
         return (self.collection.save(doc))
 
 
