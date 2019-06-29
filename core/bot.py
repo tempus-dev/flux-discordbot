@@ -31,11 +31,6 @@ class Mongo:
     def __init__(self, db_client, collection):
         self.db_client = db_client
         self.collection = getattr(self.db_client, collection) if db_client is not None else None
-        self.empty_guild = {
-            "projects": [],
-            "points": [],
-            "project_category": None
-        }
 
     @_ensure_database
     def find(self, name, pretty=False):
@@ -58,6 +53,7 @@ class Mongo:
     def update(self, name, data):
         document = self.find(name)
         document.update(data)
+        document["name"] = name
         return self.save(document)
 
     @_ensure_database
@@ -75,13 +71,16 @@ class Mongo:
         return (self.collection.save(doc))
 
 
-class Bot(commands.AutoShardedBot):
-    """An extension of AutoShardedBot, provided by the discord.py library"""
+class Bot(commands.Bot):
+    """An extension of the Bot class, provided by the discord.py library"""
 
     def __init__(self, *args, **kwargs):
-
         super().__init__(*args, **kwargs)
-
+        self.empty_guild = {
+            "projects": [],
+            "points": [],
+            "project_category": None
+        }
         with open("./config.json", "r", encoding="utf8") as file:
             data = json.dumps(json.load(file))
             self.config = json.loads(data, object_hook=lambda d: namedtuple(
@@ -100,13 +99,13 @@ class Bot(commands.AutoShardedBot):
         return db_client
 
     async def on_ready(self):
-        extensions = ['ui.developer', 'ui.general', 'ui.projects', 'ui.tasks']
-        for i in extensions:
-            self.load_extension(i)
         game = discord.Game("Unfinished.")
         await self.change_presence(status=discord.Status.dnd, activity=game)
         self.db_client = await self.loop.run_in_executor(None, self.connect_to_mongo)
         self.reminders = ReminderService(self)
+        extensions = ['ui.developer', 'ui.general', 'ui.projects', 'ui.tasks']
+        for i in extensions:
+            self.load_extension(i)
         print("Ready.")
 
     async def on_resumed(self):

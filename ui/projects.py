@@ -70,7 +70,6 @@ class Projects(commands.Cog, name="Projects"):
         for member in members:
             await channel.set_permissions(member, read_messages=True, send_messages=False)
         ctx.projects.add_project_members(project, [x.id for x in members])
-        count = len(members)
         if members == ctx.author:
             return await ctx.send(f"You're already a member.  o.o")
         if count == 1:

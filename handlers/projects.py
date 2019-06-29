@@ -104,6 +104,7 @@ class ProjectHandler:
     def add_project_members(self, project: str, members: list) -> dict:
         """This adds a project member to the member list."""
         guild_db = flux.db("guilds").find(self.guild)
+        members = [str(member) for member in members]
         project = self.find_project(project)
         current_owners = project.get('members')
         current_owners.extend(members)
@@ -117,8 +118,8 @@ class ProjectHandler:
         """This creates a task within a project."""
         task = {
             "name": name,
-            "start_timestamp": datetime.datetime.now(),
-            "due_timestamp": due,
+            "start_timestamp": (datetime.datetime.now() + datetime.timedelta(minutes=0)),
+            "end_timestamp": due,
             "completed": False,
             "assigned": [],
             "value": value,
@@ -127,7 +128,11 @@ class ProjectHandler:
         }
         project = self.find_project(project)
         project.get("tasks").append(task)
-        flux.db("guilds").update(self.guild, project)
+        guild_db = flux.db("guilds").find(self.guild)
+        number = len(guild_db["projects"][project.get("number")]["tasks"])
+        task["number"] = number
+        guild_db["projects"][project.get("number")]["tasks"].append(task)
+        flux.db("guilds").update(self.guild, guild_db)
         flux.dispatch("task_create", self.guild, task)
         return task
 
@@ -140,27 +145,34 @@ class ProjectHandler:
     def update_task_members(self, project: str, task: str, member: list) -> dict:
         """This assigns a member to a task."""
         task = self.find_task(project, task)
-        task["members"].extend(member)
-        flux.db("guilds").update(project, task)
+        member = [str(x) for x in member]
+        project = self.find_project(task.get("project"))
+        guild_db = flux.db("guilds").find(self.guild)
+        guild_db["projects"][project.get("number")]["tasks"][task.get("number")]["assigned"].extend(member)
+        flux.db("guilds").update(self.guild, guild_db)
         flux.dispatch("task_member_update", task, int(self.guild), member)
         return task
 
     def update_task_value(self, project: str, task: str, value: int) -> dict:
         """This modifies the value of a task."""
         task = self.find_task(project, task)
-        task["value"] += value
-        flux.db("guilds").update(self.guild, task)
+        guild_db = flux.db("guilds").find(self.guild)
+        guild_db["projects"][project.get("number")]["tasks"][task.get("number")]["value"] += value
+        flux.db("guilds").update(self.guild, guild_db)
 
     def update_task_status(self, project: str, task: str, status: bool) -> dict:
         """This marks a task as completed."""
         task = self.find_task(project, task)
         if task.get("completed") == status:
             return task
-        task["completed"] = status
-        flux.db("guilds").update(self.guild, task)
-        if status:
+        project = self.find_project(task.get("project"))
+        guild_db = flux.db("guilds").find(self.guild)
+        guild_db["projects"][project.get("number")]["tasks"][task.get("number")]["completed"] = status
+        flux.db("guilds").update(self.guild, guild_db)
+        if status is True:
             flux.dispatch("task_complete", self.guild, task)
-        if not status:
+        if status is False:
+            print("Do you even get here?")
             flux.dispatch("task_revoke", self.guild, task)
         return task
 

@@ -28,7 +28,7 @@ class Tasks(commands.Cog, name="Tasks"):
         for k, v in time.items():
             time[k] = int(v)
         time = datetime.timedelta(weeks=time.get("weeks"), days=time.get("days"), hours=time.get("hours"), minutes=time.get("minutes"), seconds=time.get("seconds"))
-        time = datetime.datetime.now() + time
+        time = datetime.datetime.now() - time
         return time
 
     @commands.group(hidden=True)
@@ -39,7 +39,6 @@ class Tasks(commands.Cog, name="Tasks"):
     @tasks.command()
     async def create(self, ctx, name: str, project: str, reward: int, *due) -> discord.Message:
         """This creates a task.
-        
         This command is limited to the owner of the provided project."""
 
         if str(ctx.author.id) not in ctx.projects.find_project(project).get("owner"):
@@ -48,18 +47,19 @@ class Tasks(commands.Cog, name="Tasks"):
         time = self.parse_time(due)
         task = ctx.projects.create_task(project, name, reward, time)
         total_seconds = (datetime.datetime.now() - time).seconds
-        Scheduler(total_seconds, ctx.bot.dispatch("task_due", ctx.guild.id, task))
+        async def _call_event():
+            return ctx.bot.dispatch("task_due", ctx.guild.id, task)
+        Scheduler(total_seconds, _call_event())
         return await ctx.send("Task created!")
 
     @tasks.command()
     async def assign(self, ctx, task: str, project: str, members: commands.Greedy[discord.Member]) -> discord.Message:
         """This assigns members to a project.
-        
         This command is limited to the owner of the provided project."""
 
         if str(ctx.author.id) not in ctx.projects.find_project(project).get("owner"):
             return await ctx.send("You can't assign members to this task.  o.o")
-        members = members if members > 0 else ctx.author
+        members = members if len(members) > 0 else ctx.author
         count = len(members)
         ctx.projects.update_task_members(project, task, [x.id for x in members])
         if members == ctx.author:
@@ -80,7 +80,6 @@ class Tasks(commands.Cog, name="Tasks"):
     @tasks.command()
     async def complete(self, ctx, task: str, project: str) -> discord.Message:
         """This marks a task as complete.
-        
         This command is limited to the owner of the provided project, and the members assigned to the provided task."""
 
         if str(ctx.author.id) not in ctx.projects.find_project(project).get("owner") and str(ctx.author.id) not in task.get("assigned"):
@@ -91,7 +90,6 @@ class Tasks(commands.Cog, name="Tasks"):
     @tasks.command()
     async def incomplete(self, ctx, task: str, project: str) -> discord.Message:
         """This marks a task as incomplete.
-        
         This command is limited to the owner of the provided project, and the members assigned to the provided task."""
 
         if str(ctx.author.id) not in ctx.projects.find_project(project).get("owner") and str(ctx.author.id) not in task.get("assigned"):
@@ -103,52 +101,55 @@ class Tasks(commands.Cog, name="Tasks"):
     async def on_task_member_update(self, task: dict, guild_id: int, members: list) -> discord.Message:
         """This sends a message when a member is added"""
         projects = ProjectHandler(guild_id)
-        guild = discord.utils.get(self.bot.guilds, id=guild_id)
         project = projects.find_project(task.get("project"))
-        channel = discord.utils.get(guild.channels, id=int(project.get("channel")))
-        members = [discord.utils.get(guild.members, id=member) for member in members]
+        guild = (await self.bot.fetch_guild(guild_id))
+        channel = await self.bot.fetch_channel(int(project.get("channel")))
+        members = [(await guild.fetch_member(member)) for member in members]
         count = len(members)
+        task_name = task.get("name")
         if count == 1:
             member = members[0]
-            return await channel.send(f"**> Member Update:** `{member}` was added to `{task}`.")
+            return await channel.send(f"**> Member Update:** `{member}` was added to `{task_name}`.")
         if count == 2:
-            return await channel.send(f"**> Member Update:** `{members[0]}` and `{members[1]}` were added to `{task}`.")
+            return await channel.send(f"**> Member Update:** `{members[0]}` and `{members[1]}` were added to `{task_name}`.")
         else:
             last_member = members[count - 1]
             members = members.pop(count - 1)
             string = "`"
             members = string + "`, ".join(str(x) for x in members) + string
             members = members + f" and `{last_member}``"
-            return await channel.send(f"**> Member Update:** {members} were added to `{task}`.")
+            return await channel.send(f"**> Member Update:** {members} were added to `{task_name}`.")
 
     @commands.Cog.listener()
     async def on_task_create(self, guild_id: int, task: dict) -> discord.Message:
         """Sends a message on the creation of a task to the approporiate project channel."""
         projects = ProjectHandler(guild_id)
-        guild = discord.utils.get(self.bot.guilds, id=guild_id)
-        channel = discord.utils.get(guild.channels, id=projects.find_project(task.get("project")).get("channel"))
+        project = projects.find_project(task.get("project"))
+        channel = await self.bot.fetch_channel(int(project.get("channel")))
         task_name = task.get("name")
-        task_reward = task.get("reward")
+        task_reward = task.get("value")
+        message = await channel.fetch_message(int(projects.find_project(task.get("project")).get("message")))
+        await message.edit(content=projects.project_progress_bar(task.get("project")))
         return await channel.send(f"**> Task creation:** The task `{task_name}` was created. Bounty for completion: `{task_reward}` points!")
 
     @commands.Cog.listener()
     async def on_task_complete(self, guild_id: int, task: dict) -> discord.Message:
         """This event is fired on the completion of a task."""
         pointhandler = Points()
-        value = task.get("value")
-        start_timestamp = task.get("start_timestamp")
-        end_timestamp = task.get("due")
+        projects = ProjectHandler(guild_id)
+        project = projects.find_project(task.get("project"))
+        value = self.bot.db("guilds").find(guild_id).get("projects")[project.get('number')].get("tasks")[task.get("number")]["value"]
+        start_timestamp = (datetime.datetime.now() - task.get("start_timestamp")).total_seconds()
+        end_timestamp = (task.get("end_timestamp") - datetime.datetime.now()).total_seconds()
         points = pointhandler.calculate_points(start_timestamp, end_timestamp, value)
         pointhandler.add_points(guild_id, task, points)
 
-        projects = ProjectHandler(guild_id)
-        guild = discord.utils.get(self.bot.guilds, id=guild_id)
-        channel = discord.utils.get(guild.channels, id=projects.find_project(task.get("project")).get("channel"))
+        channel = await self.bot.fetch_channel(int(project.get("channel")))
         task_name = task.get("name")
-        task_reward = task.get("reward")
+        value = self.bot.db("guilds").find(guild_id).get("projects")[project.get('number')].get("tasks")[task.get("number")]["value"]
         message = await channel.fetch_message(int(projects.find_project(task.get("project")).get("message")))
-        await message.edit(content=projects.project_progress_bar(task.get("projects")))
-        return await channel.send(f"**> Task completion:** The task `{task_name}` was completed and the bounty of `{task_reward}` points has been claimed!")
+        await message.edit(content=projects.project_progress_bar(task.get("project")))
+        return await channel.send(f"**> Task completion:** The task `{task_name}` was completed and the bounty of `{value}` points has been claimed!")
 
     @commands.Cog.listener()
     async def on_task_revoke(self, guild_id: int, task: dict) -> discord.Message:
@@ -163,38 +164,39 @@ class Tasks(commands.Cog, name="Tasks"):
             for points in points_gained:
                 pointhandler.remove_points(guild_id, task, points)
 
-        guild = discord.utils.get(self.bot.guilds, id=guild_id)
-        channel = discord.utils.get(guild.channels, id=projects.find_project(task.get("project")).get("channel"))
+        project = projects.find_project(task.get("project"))
+        channel = await self.bot.fetch_channel(int(project.get("channel")))
         task_name = task.get("name")
-        task_reward = task.get("reward")
+        task_reward = self.bot.db("guilds").find(guild_id).get("projects")[project.get('number')].get("tasks")[task.get("number")]["value"]
+        message = await channel.fetch_message(int(projects.find_project(task.get("project")).get("message")))
+        await message.edit(content=projects.project_progress_bar(task.get("project")))
         return await channel.send(f"**> Task revoked:** The task `{task_name}` was marked as incomplete. The bounty of `{task_reward}` points is back up.")
         
 
     @commands.Cog.listener()
     async def on_task_due(self, guild_id: int, task: dict):
         """This fires when a task is due."""
-        if task.get("completed"):
-            return 
         projects = ProjectHandler(guild_id)
-        channel_id = int(projects.find(task.get("project")).get("channel"))
-        guild = discord.utils.get(self.bot.guilds, id=guild_id)
-        channel = discord.utils.get(guild.channels, id=channel_id)
-        members = task.get("assigned")
-        members = [discord.utils.get(guild.members, id=member) for member in members]
+        project = projects.find_project(task.get('project'))
+        completed = self.bot.db("guilds").find(str(guild_id)).get('projects')[project.get("number")].get("tasks")[task.get("number")].get("completed")
+        if completed:
+            return
+        channel = await self.bot.fetch_channel(int(project.get("channel")))
+        members = self.bot.db("guilds").find(str(guild_id)).get('projects')[project.get("number")].get("tasks")[task.get("number")].get("assigned")
+        print(members)
+        members = members = [(await self.bot.fetch_user(member)) for member in members]
         new_value = task.get("value") * 10 / 100
         if new_value < 1:
             new_value = 1
-        task["value"] = new_value
-        self.bot.db("guilds").update(str(guild_id), task)
+        guild = self.bot.db("guilds").find(str(guild_id))
+        guild.get('projects')[project.get("number")].get("tasks")[task.get("number")]["value"] = new_value
+        self.bot.db("guilds").update(str(guild_id), guild)
+        task = guild.get('projects')[project.get("number")].get("tasks")[task.get("number")]
         task_name = task.get("name")
         task_value = task.get("value")
         await channel.send(f"**> Task bounty update:** Task `{task_name}` is now valued at `{task_value}` points.")
         for member in members:
-            try:
-                await member.send(f":alarm_clock: The task {task_name} is now overdue. And as such, the bounty is 10% of what it originally was. Bounty now: `{task_value}` points.")
-            except:
-                continue
-
+            await member.send(f":alarm_clock: The task {task_name} is now overdue. And as such, the bounty is 10% of what it originally was. Bounty now: `{task_value}` points.")
 
 def setup(bot):
     bot.add_cog(Tasks(bot))
