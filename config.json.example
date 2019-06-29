@@ -1,3 +1,6 @@
 {
-    "token": "your-token-here"
+    "token": "your-token-here",
+    "uri": "localhost",
+    "db": "flux",
+    "owners": [ your-discord-id-here ]
 }

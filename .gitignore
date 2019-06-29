@@ -105,3 +105,9 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# Visual Studio Code
+*.code-workspace
+/.vscode
+
+ui/developer.py
