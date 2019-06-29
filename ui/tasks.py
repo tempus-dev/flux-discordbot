@@ -10,6 +10,7 @@ from discord.ext import commands
 
 from handlers.projects import ProjectHandler
 from handlers.points import Points
+from handlers.scheduling import Scheduler
 
 
 class Tasks(commands.Cog, name="Tasks"):
@@ -30,22 +31,24 @@ class Tasks(commands.Cog, name="Tasks"):
         time = datetime.datetime.now() + time
         return time
 
-    @commands.group()
+    @commands.group(hidden=True)
     async def tasks(self, ctx) -> None:
         """Task related commands."""
-        pass
+        ctx.projects = ProjectHandler(ctx.guild.id)
 
     @tasks.command()
     async def create(self, ctx, name: str, project: str, reward: int, *due) -> discord.Message:
         """This creates a task.
         
         This command is limited to the owner of the provided project."""
-        projects = ProjectHandler(ctx.guild.id)
-        if str(ctx.author.id) not in projects.find_project(project).get("owner"):
+
+        if str(ctx.author.id) not in ctx.projects.find_project(project).get("owner"):
             return await ctx.send("You can't create tasks on this project.  o.o")
         due = " ".join(due)
         time = self.parse_time(due)
-        projects.create_task(project, name, reward, time)
+        task = ctx.projects.create_task(project, name, reward, time)
+        total_seconds = (datetime.datetime.now() - time).seconds
+        Scheduler(total_seconds, ctx.bot.dispatch("task_due", ctx.guild.id, task))
         return await ctx.send("Task created!")
 
     @tasks.command()
@@ -53,12 +56,12 @@ class Tasks(commands.Cog, name="Tasks"):
         """This assigns members to a project.
         
         This command is limited to the owner of the provided project."""
-        projects = ProjectHandler(ctx.guild.id)
-        if str(ctx.author.id) not in projects.find_project(project).get("owner"):
+
+        if str(ctx.author.id) not in ctx.projects.find_project(project).get("owner"):
             return await ctx.send("You can't assign members to this task.  o.o")
         members = members if members > 0 else ctx.author
         count = len(members)
-        projects.update_task_members(project, task, [x.id for x in members])
+        ctx.projects.update_task_members(project, task, [x.id for x in members])
         if members == ctx.author:
             return await ctx.send(f"Successfully assigned you to `{task}`.")
         if count == 1:
@@ -79,10 +82,10 @@ class Tasks(commands.Cog, name="Tasks"):
         """This marks a task as complete.
         
         This command is limited to the owner of the provided project, and the members assigned to the provided task."""
-        projects = ProjectHandler(ctx.guild.id)
-        if str(ctx.author.id) not in projects.find_project(project).get("owner") and str(ctx.author.id) not in task.get("assigned"):
+
+        if str(ctx.author.id) not in ctx.projects.find_project(project).get("owner") and str(ctx.author.id) not in task.get("assigned"):
             return await ctx.send("You can't mark this task as complete.  o.o")
-        projects.update_task_status(project, task, True)
+        ctx.projects.update_task_status(project, task, True)
         return await ctx.send(f"Marked `{task}` as completed!")
 
     @tasks.command()
@@ -90,10 +93,10 @@ class Tasks(commands.Cog, name="Tasks"):
         """This marks a task as incomplete.
         
         This command is limited to the owner of the provided project, and the members assigned to the provided task."""
-        projects = ProjectHandler(ctx.guild.id)
-        if str(ctx.author.id) not in projects.find_project(project).get("owner") and str(ctx.author.id) not in task.get("assigned"):
+
+        if str(ctx.author.id) not in ctx.projects.find_project(project).get("owner") and str(ctx.author.id) not in task.get("assigned"):
             return await ctx.send("You can't mark this task as incomplete.  o.o")
-        projects.update_task_status(project, task, False)
+        ctx.projects.update_task_status(project, task, False)
         return await ctx.send(f"Marked `{task}` as incomplete.")
 
     @commands.Cog.listener()
@@ -166,6 +169,32 @@ class Tasks(commands.Cog, name="Tasks"):
         task_reward = task.get("reward")
         return await channel.send(f"**> Task revoked:** The task `{task_name}` was marked as incomplete. The bounty of `{task_reward}` points is back up.")
         
+
+    @commands.Cog.listener()
+    async def on_task_due(self, guild_id: int, task: dict):
+        """This fires when a task is due."""
+        if task.get("completed"):
+            return 
+        projects = ProjectHandler(guild_id)
+        channel_id = int(projects.find(task.get("project")).get("channel"))
+        guild = discord.utils.get(self.bot.guilds, id=guild_id)
+        channel = discord.utils.get(guild.channels, id=channel_id)
+        members = task.get("assigned")
+        members = [discord.utils.get(guild.members, id=member) for member in members]
+        new_value = task.get("value") * 10 / 100
+        if new_value < 1:
+            new_value = 1
+        task["value"] = new_value
+        self.bot.db("guilds").update(str(guild_id), task)
+        task_name = task.get("name")
+        task_value = task.get("value")
+        await channel.send(f"**> Task bounty update:** Task `{task_name}` is now valued at `{task_value}` points.")
+        for member in members:
+            try:
+                await member.send(f":alarm_clock: The task {task_name} is now overdue. And as such, the bounty is 10% of what it originally was. Bounty now: `{task_value}` points.")
+            except:
+                continue
+
 
 def setup(bot):
     bot.add_cog(Tasks(bot))

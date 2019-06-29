@@ -16,10 +16,10 @@ class Projects(commands.Cog, name="Projects"):
         self.bot = bot
 
 
-    @commands.group()
+    @commands.group(hidden=True)
     async def projects(self, ctx) -> None:
         """Project related commands."""
-        pass
+        ctx.projects = ProjectHandler(ctx.guild.id)
 
     @commands.has_permissions(manage_channels=True)
     @projects.command()
@@ -27,9 +27,8 @@ class Projects(commands.Cog, name="Projects"):
         """This creates a project.
         
         You can set the owner to be someone other than you by providing a member."""
-        owner = owner if owner is not None else ctx.author
-        projects = ProjectHandler(ctx.guild.id)
 
+        owner = owner if owner is not None else ctx.author
         if ctx.bot.db("guilds").find(ctx.guild.id) is None:
             ctx.bot.db("guilds").insert(ctx.guild.id, ctx.bot.empty_guild)
 
@@ -49,26 +48,26 @@ class Projects(commands.Cog, name="Projects"):
         await channel.send(f"Project Owner: {ctx.author}")
         message = await channel.send("Project Progress: |--------------------------------------------------| 0.0% Complete")
         await message.pin()
-        projects.create_project(owner, owner, name, channel.id, message.id)
+        ctx.projects.create_project(owner, owner, name, channel.id, message.id)
         await ctx.send("Project created!")
 
     @projects.command()
     async def status(self, ctx, project_name: str) -> discord.Message:
         """This returns the status of a project."""
-        projects = ProjectHandler(ctx.guild.id)
-        await ctx.send(projects.project_progress_bar(project_name))
+
+        await ctx.send(ctx.projects.project_progress_bar(project_name))
 
     @projects.command()
     async def add(self, ctx, project: str, members: commands.Greedy[discord.Member]) -> discord.Message:
         """This adds as many project members as you want to your project.
         
         This command is limited to the project owner only."""
-        projects = ProjectHandler(ctx.guild.id)
-        if str(ctx.author.id) not in projects.find_project(project).get("owner"):
+
+        if str(ctx.author.id) not in ctx.projects.find_project(project).get("owner"):
             return await ctx.send("You can't add members to this project.  o.o")
         members = members if members > 0 else ctx.author
         count = len(members)
-        projects.add_project_members(project, [x.id for x in members])
+        ctx.projects.add_project_members(project, [x.id for x in members])
         count = len(members)
         if members == ctx.author:
             return await ctx.send(f"You're already a member.  o.o")
