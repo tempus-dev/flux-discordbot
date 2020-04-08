@@ -78,6 +78,8 @@ class General(commands.Cog, name="General"):
     @commands.command()
     async def remind(self, ctx, to_remind: str, *time) -> discord.Message:
         """A reminder command. You can have more than one word by putting your reminder message in quotations. Example: "reminder words" """
+        if not ctx.bot.db_client:
+            return await ctx.send("Without the database running, this command is defunct. Please contact the bot maintainer.")
         time = " ".join(time)
         time = self.parse_time(time)
         await ReminderService(ctx.bot).new_reminder(ctx.author.id, to_remind, time)
@@ -86,6 +88,8 @@ class General(commands.Cog, name="General"):
     @commands.command()
     async def leaderboard(self, ctx):
         """This shows a leaderboard of all the points."""
+        if not ctx.bot.db_client:
+            return await ctx.send("Without the database running, this command is defunct. Please contact the bot maintainer.")
         leaderboardhandler = Leaderboard()
         points = ctx.bot.db("guilds").find(str(ctx.guild.id)).get("points")
         if points is None:
