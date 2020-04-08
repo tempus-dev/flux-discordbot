@@ -39,6 +39,7 @@ class Mongo:
             return(dumps(data, sort_keys=True, indent=2))
         return data
 
+    @_ensure_database
     def find_all(self, pretty=False) -> dict:
         """This returns all the documents in a given collection."""
         return self.collection.find({})
@@ -103,7 +104,7 @@ class Bot(commands.Bot):
         await self.change_presence(status=discord.Status.dnd, activity=game)
         self.db_client = await self.loop.run_in_executor(None, self.connect_to_mongo)
         self.reminders = ReminderService(self)
-        extensions = ['ui.general', 'ui.projects', 'ui.tasks']
+        extensions = ['ui.general', 'ui.projects', 'ui.tasks', 'ui.developer'] if self.db_client else ['ui.general', 'ui.developer']
         for i in extensions:
             self.load_extension(i)
         print("Ready.")
@@ -115,4 +116,4 @@ class Bot(commands.Bot):
 
 
 
-flux = Bot(command_prefix=".", help_command=None)
+flux = Bot(command_prefix=".", help_command=None, guild_subscriptions=False, fetch_offline_members=False)
