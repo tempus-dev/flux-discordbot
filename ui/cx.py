@@ -36,7 +36,7 @@ class cx(commands.Cog):
         await ctx.send("The message has been sent successfully! "
                        "Make sure your DMs are open to receive the response, "
                        "and the developers will get back to "
-                       " you when they can")
+                       "you when they can")
 
 
 def setup(bot):

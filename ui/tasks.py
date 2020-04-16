@@ -48,7 +48,7 @@ class Tasks(commands.Cog, name="Tasks"):
 
         if str(ctx.author.id) not in \
                 ctx.projects.find_project(project).get("owner"):
-            await ctx.send("You can't create tasks on this project.  o.o")
+            await ctx.send("You can't create tasks on this project.")
             return
         due = " ".join(due)
         time = self.parse_time(due)
@@ -68,7 +68,7 @@ class Tasks(commands.Cog, name="Tasks"):
 
         if str(ctx.author.id) not in \
                 ctx.projects.find_project(project).get("owner"):
-            await ctx.send("You can't assign members to this task.  o.o")
+            await ctx.send("You can't assign members to this task.")
             return
         members = members if len(members) > 0 else [ctx.author]
         count = len(members)
@@ -104,7 +104,7 @@ class Tasks(commands.Cog, name="Tasks"):
         if str(ctx.author.id) not in \
             ctx.projects.find_project(project).get("owner") and \
                 str(ctx.author.id) not in task.get("assigned"):
-            return await ctx.send("You can't mark this task as complete.  o.o")
+            return await ctx.send("You can't mark this task as complete.")
         ctx.projects.update_task_status(project, task, True)
         return await ctx.send(f"Marked `{task}` as completed!")
 
@@ -119,7 +119,7 @@ class Tasks(commands.Cog, name="Tasks"):
         if str(ctx.author.id) not in \
                 ctx.projects.find_project(project).get("owner") and \
                 str(ctx.author.id) not in task.get("assigned"):
-            await ctx.send("You can't mark this task as incomplete.  o.o")
+            await ctx.send("You can't mark this task as incomplete.")
         ctx.projects.update_task_status(project, task, False)
         await ctx.send(f"Marked `{task}` as incomplete.")
 

@@ -78,11 +78,12 @@ class Projects(commands.Cog, name="Projects"):
         return await ctx.send("Project created!")
 
     @projects.command()
-    async def delete(self, ctx, project_name: str) -> discord.Message:
+    async def delete(self, ctx, project_name: str) -> None:
         """This deletes a project."""
         if not ctx.projects.find_project(project_name):
             channel = discord.utils.get(
                 ctx.guild.channels, name=f"{project_name}-project")
+
             if channel and channel.category.name == "Flux Projects":
                 if ctx.author.permissions_in(channel).manage_channel:
                     message = await ctx.send("That project doesn't appear to"
@@ -100,21 +101,33 @@ class Projects(commands.Cog, name="Projects"):
                         (reaction.message.channel == ctx.channel)
                     )
                     if reaction.emoji.id == 596576670815879169:  # tick yes
-                        try:
-                            channel_id = ctx.projects.find_project(
-                                project_name).get("channel")
-                            ctx.projects.delete_project(project_name)
-                            channel = await ctx.guild.fetch_channel(
-                                channel_id
-                            )
-                        except Exception:
-                            pass  # TODO : Fix.
+                        channel_id = ctx.projects.find_project(
+                            project_name).get("channel")
+                        channel = await ctx.guild.fetch_channel(
+                            channel_id
+                        )
+                        await channel.delete(reason="Project not found.")
+                        await ctx.send("The chanenl was deleted sucessfully.")
+                        return
+
                     elif reaction.emoji.id == 596576672149667840:  # tick no
-                        await ctx.send("Okay.")
-                await ctx.send("That project does not appear to be in my "
-                               "database, but the channel for it still exists."
-                               )
-            return await ctx.send("I could not find this project.")
+                        await ctx.send("Not deleting the channel.")
+                        return
+
+                else:  # If author doesn't have access to deleting channels.
+                    await ctx.send("That project does not appear to be in my "
+                                   "database, but the channel for it still "
+                                   "exists. Please have someone with"
+                                   " manage channels run this chommand."
+                                   )
+                    return
+            else:
+                return await ctx.send("I could not find this project.")
+
+        if str(ctx.author.id) != ctx.projects.find_project(project_name).get(
+                "owner"):
+            await ctx.send("Only the owner can delete the project.")
+            return
         message = await ctx.send("This action __cannot__ be undone. "
                                  "Once you do this, everything is gone. "
                                  "Are you sure you want to continue?")
@@ -129,14 +142,13 @@ class Projects(commands.Cog, name="Projects"):
             (reaction.message.channel == ctx.channel)
         )
         if reaction.emoji.id == 596576670815879169:  # tick yes
-            try:
-                channel = ctx.projects.find_project(
-                    project_name).get("channel")
-                ctx.projects.delete_project(project_name)
-            except Exception:
-                pass
+            channel = ctx.projects.find_project(
+                project_name).get("channel")
+            ctx.projects.delete_project(project_name)
+            await channel.delete(reason="Project deleted.")
+            await ctx.send("The project has been deleted.")
         elif reaction.emoji.id == 596576672149667840:  # tick no
-            await ctx.send("Okay.")
+            await ctx.send("Not deleting the project.")
 
     @projects.command()
     async def status(self, ctx, project_name: str) -> discord.Message:
@@ -154,7 +166,7 @@ class Projects(commands.Cog, name="Projects"):
         project = project_name
         if str(ctx.author.id) != ctx.projects.find_project(project).get(
                 "owner"):
-            await ctx.send("You can't add members to this project.  o.o")
+            await ctx.send("You can't add members to this project.")
         members = members if len(members) > 0 else [ctx.author]
         count = len(members)
         channel = ctx.guild.get_channel(
@@ -164,7 +176,7 @@ class Projects(commands.Cog, name="Projects"):
                                           send_messages=False)
         ctx.projects.add_project_members(project, [x.id for x in members])
         if members == ctx.author:
-            await ctx.send(f"You're already a member.  o.o")
+            await ctx.send(f"You're already a member.")
         if count == 1:
             member = members[0]
             await ctx.send(f"`{member}` is now a member.")
