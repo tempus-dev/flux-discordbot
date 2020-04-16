@@ -1,34 +1,37 @@
 import datetime
 
 from core.bot import flux
-from typing import Union
 
 
 class ProjectHandler:
     """This manages the creation & deletion of projects."""
-    
+
     def __init__(self, guild: int):
         self.guild = str(guild)
-    
-    def generate_progress_bar(self, iteration, total, prefix = '', suffix = '', decimals = 1, length = 22, fill = '█'):
+
+    def generate_progress_bar(self, iter, total, prefix='', suffix='',
+                              decimals=1, length=22, fill='█'):
         """
         Call in a loop to create terminal progress bar
         @params:
-            iteration   - Required  : current iteration (Int)
-            total       - Required  : total iterations (Int)
-            prefix      - Optional  : prefix string (Str)
-            suffix      - Optional  : suffix string (Str)
-            decimals    - Optional  : positive number of decimals in percent complete (Int)
-            length      - Optional  : character length of bar (Int)
-            fill        - Optional  : bar fill character (Str)
+            iteration   - Required : current iteration (Int)
+            total       - Required : total iterations (Int)
+            prefix      - Optional : prefix string (Str)
+            suffix      - Optional : suffix string (Str)
+            decimals    - Optional : positive # of decimals in % complete (Int)
+            length      - Optional : character length of bar (Int)
+            fill        - Optional : bar fill character (Str)
         """
-        percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
-        filledLength = int(length * iteration // total)
+        t = total
+        percent = ("{0:." + str(decimals) + "f}").format(100 *
+                                                         (iter / float(t)))
+        filledLength = int(length * iter // total)
         bar = fill * filledLength + '-' * (length - filledLength)
         progress_bar = "\r%s |%s| %s%% %s" % (prefix, bar, percent, suffix)
         return progress_bar
 
-    def create_project(self, owner: int, member: int, name: str, channel: int, message: int) -> dict:
+    def create_project(self, owner: int, member: int, name: str, channel: int,
+                       message: int) -> dict:
         """This creates a project."""
         project = {
             "name": name,
@@ -47,12 +50,26 @@ class ProjectHandler:
             project["number"] = 0
             flux.db("guilds").update(self.guild, {"projects": [project]})
         else:
+            if self.find_project(name):
+                return None
             project["number"] = len(guild_db.get("projects"))
             guild_db.get("projects").append(project)
             flux.db("guilds").update(self.guild, guild_db)
-        
+
         flux.dispatch("project_created", name)
         return project
+
+    def delete_project(self, name: str) -> None:
+        """This deletes a project."""
+        project = self.find_project(name)
+        if not project:
+            return
+        guild = flux.db("guilds").find(self.guild)
+        for i in range(len(guild.get("projects"))):
+            if guild.get("projects")[i].get('name') == name:
+                del guild['projects'][i]
+                break
+        flux.db("guilds").update(self.guild, guild)
 
     def find_project(self, name: str) -> dict:
         """This searches for a project within a given guild."""
@@ -63,7 +80,7 @@ class ProjectHandler:
         return next((item for item in projects if item["name"] == name), None)
 
     def update_project_channel(self, project: str, channel: int) -> dict:
-        """This updates the channel that contains the quick information display."""
+        """This updates the channel that contains the information display."""
         project = self.find_project(project)
         project["channel"] = channel
         flux.db("guilds").update(self.guild, project)
@@ -74,13 +91,15 @@ class ProjectHandler:
         guild = flux.db("guilds").find(self.guild)
         if guild is None or guild.get("projects") is None:
             return
-        project = next((item for item in guild.get("projects") if item["name"] == project), None)
+        project = next((item for item in guild.get("projects")
+                        if item["name"] == project), None)
         if not project:
             return
         tasks = len(project.get('tasks'))
         if tasks == 0:
             return
-        completed_tasks = len([item for item in project.get("tasks") if item.get("completed") == True])
+        completed_tasks = len([item for item in project.get(
+            "tasks") if item.get("completed")])
         if completed_tasks == 0:
             return 0
         return round(completed_tasks/tasks*100)
@@ -90,16 +109,20 @@ class ProjectHandler:
         guild = flux.db("guilds").find(self.guild)
         if guild is None or guild.get("projects") is None:
             return
-        project = next((item for item in guild.get("projects") if item["name"] == project), None)
+        project = next((item for item in guild.get("projects")
+                        if item["name"] == project), None)
         if not project:
             return
         tasks = len(project.get('tasks'))
         if tasks == 0:
-            return
-        completed_tasks = len([item for item in project.get("tasks") if item.get("completed") == True])
-        if completed_tasks == 0:
-            return 0
-        return self.generate_progress_bar(completed_tasks, tasks, prefix="Project Progress:", suffix="Complete")
+            return "Create a task to have a progress bar!"
+        completed_tasks = len([item for item in project.get(
+            "tasks") if item.get("completed")])
+        # if completed_tasks == 0:
+        #    return
+        return self.generate_progress_bar(completed_tasks, tasks,
+                                          prefix="Project Progress:",
+                                          suffix="Complete")
 
     def add_project_members(self, project: str, members: list) -> dict:
         """This adds a project member to the member list."""
@@ -114,11 +137,13 @@ class ProjectHandler:
         flux.dispatch("project_member_add", self.guild, project, members)
         return project
 
-    def create_task(self, project: str, name: str, value: int, due: datetime.datetime) -> dict:
+    def create_task(self, project: str, name: str, value: int,
+                    due: datetime.datetime) -> dict:
         """This creates a task within a project."""
+        start_ = (datetime.datetime.now() + datetime.timedelta(minutes=0))
         task = {
             "name": name,
-            "start_timestamp": (datetime.datetime.now() + datetime.timedelta(minutes=0)),
+            "start_timestamp": start_,
             "end_timestamp": due,
             "completed": False,
             "assigned": [],
@@ -137,18 +162,22 @@ class ProjectHandler:
         return task
 
     def find_task(self, project: str, task: str) -> dict:
-        """This searches for a task within a given project, within a given guild."""
+        """This searches for a task within a given project,
+        within a given guild."""
         project = self.find_project(project)
-        task = next((item for item in project.get("tasks") if item["name"] == task), None)
+        task = next((item for item in project.get(
+            "tasks") if item["name"] == task), None)
         return task
 
-    def update_task_members(self, project: str, task: str, member: list) -> dict:
+    def update_task_members(self, project: str, task: str,
+                            member: list) -> dict:
         """This assigns a member to a task."""
         task = self.find_task(project, task)
         member = [str(x) for x in member]
         project = self.find_project(task.get("project"))
         guild_db = flux.db("guilds").find(self.guild)
-        guild_db["projects"][project.get("number")]["tasks"][task.get("number")]["assigned"].extend(member)
+        guild_db["projects"][project.get("number")]["tasks"][task.get(
+            "number")]["assigned"].extend(member)
         flux.db("guilds").update(self.guild, guild_db)
         flux.dispatch("task_member_update", task, int(self.guild), member)
         return task
@@ -157,17 +186,20 @@ class ProjectHandler:
         """This modifies the value of a task."""
         task = self.find_task(project, task)
         guild_db = flux.db("guilds").find(self.guild)
-        guild_db["projects"][project.get("number")]["tasks"][task.get("number")]["value"] += value
+        guild_db["projects"][project.get(
+            "number")]["tasks"][task.get("number")]["value"] += value
         flux.db("guilds").update(self.guild, guild_db)
 
-    def update_task_status(self, project: str, task: str, status: bool) -> dict:
+    def update_task_status(self, project: str, task: str,
+                           status: bool) -> dict:
         """This marks a task as completed."""
         task = self.find_task(project, task)
         if task.get("completed") == status:
             return task
         project = self.find_project(task.get("project"))
         guild_db = flux.db("guilds").find(self.guild)
-        guild_db["projects"][project.get("number")]["tasks"][task.get("number")]["completed"] = status
+        guild_db["projects"][project.get("number")]["tasks"][task.get(
+            "number")]["completed"] = status
         flux.db("guilds").update(self.guild, guild_db)
         if status is True:
             flux.dispatch("task_complete", self.guild, task)
@@ -175,6 +207,3 @@ class ProjectHandler:
             print("Do you even get here?")
             flux.dispatch("task_revoke", self.guild, task)
         return task
-
-
-        

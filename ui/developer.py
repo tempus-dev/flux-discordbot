@@ -1,13 +1,9 @@
 import os
 import io
-import sys
 import time
-import asyncio
-import inspect
 import textwrap
 import traceback
 from contextlib import redirect_stdout
-from handlers.pathing import path, now
 from handlers.scheduling import Scheduler
 
 import git
@@ -16,7 +12,7 @@ from discord.ext import commands
 
 
 class Developer(commands.Cog, name="Developer"):
-    """This cog contains all commands related to the development and maintence of Flux."""
+    """Internal developer only commands."""
 
     def __init__(self, bot):
         self.bot = bot
@@ -127,7 +123,7 @@ class Developer(commands.Cog, name="Developer"):
         try:
             with redirect_stdout(stdout):
                 ret = await func()
-        except Exception as e:
+        except Exception:
             value = stdout.getvalue()
             for page in pagify(text=f"{value}{traceback.format_exc()}"):
                 await ctx.send(box(page, lang="py"))
@@ -135,7 +131,7 @@ class Developer(commands.Cog, name="Developer"):
             value = stdout.getvalue()
             try:
                 await ctx.message.add_reaction('\u2705')
-            except Exception as e:
+            except Exception:
                 pass
 
             if ret is None:
@@ -157,16 +153,16 @@ class Developer(commands.Cog, name="Developer"):
             return await ctx.send("Couldn't find that module!")
         except Exception as e:
             error = ("Exception in loading module '{}'\n"
-              "".format(module))
+                     "".format(module))
             error += "".join(traceback.format_exception(type(e), e,
-                            e.__traceback__))
+                                                        e.__traceback__))
             try:
                 await ctx.author.send(error)
             except discord.errors.Forbidden:
                 return await ctx.send("Couldn't load that module!")
 
             return await ctx.send("Couldn't load that module! "
-                                 "Sent you the error in DMs.")
+                                  "Sent you the error in DMs.")
 
     @commands.command()
     async def unload(self, ctx, module: str) -> discord.Message:
@@ -174,7 +170,8 @@ class Developer(commands.Cog, name="Developer"):
         try:
             ctx.bot.unload_extension(module)
         except commands.errors.ExtensionNotLoaded:
-            return await ctx.send("That module either isn't loaded or doesn't exist.")
+            return await ctx.send(
+                "That module either isn't loaded or doesn't exist.")
         return await ctx.send(f"Unloaded `{module}`!")
 
     @commands.command()
@@ -187,18 +184,19 @@ class Developer(commands.Cog, name="Developer"):
         except ModuleNotFoundError:
             return await ctx.send("Couldn't find that module.")
         except commands.errors.ExtensionNotLoaded:
-            return await ctx.send("That module either doesn't exist or was never loaded.")
+            return await ctx.send(
+                "That module either doesn't exist or was never loaded.")
         except Exception as e:
             error = ("Exception in loading module '{}'\n"
-              "".format(module))
+                     "".format(module))
             error += "".join(traceback.format_exception(type(e), e,
-                            e.__traceback__))
+                                                        e.__traceback__))
             try:
                 await ctx.author.send(error)
             except discord.errors.Forbidden:
                 return await ctx.send("Couldn't load that module!")
             return await ctx.send("Couldn't load that module! "
-                                 "Sent you the error in DMs.")
+                                  "Sent you the error in DMs.")
 
     @commands.command()
     async def schedule(self, ctx, duration: int) -> None:
@@ -207,11 +205,12 @@ class Developer(commands.Cog, name="Developer"):
 
         Scheduler.schedule(time.time() + duration, cb("Test successful!"))
         await ctx.send("Schedule created.")
-    
+
     @commands.command()
     async def user_flags(self, ctx, user_id: int) -> discord.Message:
         """Grabs the badges of a user."""
-        user = await ctx.bot.http.request(discord.http.Route("GET", f"/users/{user_id}"))
+        user = await ctx.bot.http.request(
+            discord.http.Route("GET", f"/users/{user_id}"))
         public_flags = user["public_flags"]
         flags = []
         for flag in ctx.bot.flags:
@@ -227,11 +226,11 @@ class Developer(commands.Cog, name="Developer"):
         user = (await ctx.bot.fetch_user(user_id))
         message = " ".join(message)
         try:
-            await user.send(f"You've received a response from the developers!\n```\n{message}\n```")
+            await user.send(f"You've received a response from the developers!"
+                            f"\n```\n{message}\n```")
             await ctx.send("Sent.")
         except Exception as e:
             await ctx.send(f"Message send failure. `{e}`")
-        
 
 
 def setup(bot):
