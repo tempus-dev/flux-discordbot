@@ -2,5 +2,7 @@
     "token": "your-token-here",
     "uri": "localhost",
     "db": "flux",
+    "contact_channel": null,
+    "contact_channel_id": your-channel-id-here,
     "owners": [ your-discord-id-here ]
 }
