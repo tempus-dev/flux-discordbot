@@ -117,7 +117,8 @@ class HelpCommand(commands.HelpCommand):
             f'{cmd.signature}'
 
     # this is a custom written method along with all the others below this
-    def get_command_aliases(self, cmd):
+    @staticmethod
+    def get_command_aliases(cmd):
         """Method to return a commands aliases"""
         if not cmd.aliases:  # check if it has any aliases
             return ''
@@ -125,14 +126,16 @@ class HelpCommand(commands.HelpCommand):
             return 'command aliases are'
             f'[`{"` | `".join([alias for alias in cmd.aliases])}`]'
 
-    def get_command_description(self, command):
+    @staticmethod
+    def get_command_description(command):
         """Method to return a commands short doc/brief"""
         if not command.short_doc:  # check if it has any brief
             return 'There is no documentation for this command currently'
         else:
             return command.short_doc
 
-    def get_command_help(self, command):
+    @staticmethod
+    def get_command_help(command):
         """Method to return a commands full description/doc string"""
         if not command.help:  # check if it has any brief or doc string
             return 'There is no documentation for this command currently'
@@ -158,7 +161,7 @@ class Bot(commands.Bot):
             self.config = json.loads(data, object_hook=lambda d: recordclass(
                 "config", d.keys())(*d.values()))
 
-    async def send_cmd_help(self, ctx) -> discord.Message:
+    async def send_cmd_help(self, ctx) -> None:
         msg = f"""```
         {self.helpc.get_command_signature(ctx, ctx.command)}
 
