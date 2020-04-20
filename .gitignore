@@ -110,4 +110,3 @@ venv.bak/
 *.code-workspace
 /.vscode
 
-ui/developer.py

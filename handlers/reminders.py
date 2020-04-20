@@ -1,7 +1,5 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from uuid import uuid4
-
-from discord.ext import commands
 
 from handlers.scheduling import Scheduler
 
@@ -30,22 +28,21 @@ class ReminderService:
     def __init__(self, bot):
         self.bot = bot
 
-    async def new_reminder(self, author_id: int, message: str, time: datetime):
+    async def new_reminder(self, author_id: int,
+                           message: str, time: datetime):
         total_seconds = (datetime.now() - time).seconds
-        reminder = Reminder(str(uuid4()), str(author_id), message, total_seconds)
+        reminder = Reminder(str(uuid4()), str(
+            author_id), message, total_seconds)
         data = reminder.serialize()
         name = data["id"]
         data.pop("id")
         self.bot.db("reminders").insert(name, data)
         await self._set_reminder(reminder)
 
-
     async def _set_reminder(self, reminder):
-        async def remind(bot, reminder): 
+        async def remind(bot, reminder):
             author = (await bot.fetch_user(reminder.author_id))
             await author.send(reminder.message)
             self.bot.db("reminders").delete(reminder.id)
 
         Scheduler(reminder.time, remind(self.bot, reminder))
-
-    

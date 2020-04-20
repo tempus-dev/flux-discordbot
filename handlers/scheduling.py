@@ -1,5 +1,5 @@
 import asyncio
-import datetime
+from datetime import datetime
 from typing import Coroutine
 
 
@@ -20,5 +20,5 @@ class Scheduler:
     @classmethod
     def schedule(cls, end: float, callback: Coroutine):
         """ Schedules task using timestamp. """
-        duration = datetime.datetime.fromtimestamp(end) - datetime.datetime.now()
+        duration = datetime.fromtimestamp(end) - datetime.now()
         return cls(duration.seconds, callback)

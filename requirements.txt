@@ -1,3 +1,5 @@
 discord.py
 pymongo
 gitpython
+disputils
+recordclass
