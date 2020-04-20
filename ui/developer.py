@@ -118,6 +118,7 @@ class Developer(commands.Cog, name="Developer"):
         except Exception as e:
             for page in pagify(text=f"{e.__class__.__name__}: {e}"):
                 await ctx.send(box(page, lang="py"))
+                return
 
         func = env['func']
         try:
