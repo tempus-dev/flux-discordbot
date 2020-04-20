@@ -12,6 +12,7 @@ from discord.ext import commands
 from pymongo import MongoClient
 
 from handlers.reminders import ReminderService
+from handlers.insights import Insights
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -206,8 +207,13 @@ class Bot(commands.Bot):
             try:
                 raise error
             except Exception:
+                uuid = await Insights(self).log_error(ctx, log)
+                if ctx.author.id in self.config.owners:
+                    await ctx.send("DEBUG: This command silently errored. "
+                                   f"ID: {uuid}")
                 print('Ignoring exception in command {}:'
                       .format(ctx.command), file=sys.stderr)
+                logger.warning(f"Error ID: {uuid}")
         traceback.print_exception(type(error), error, error.__traceback__,
                                   file=sys.stderr)
 
@@ -235,10 +241,11 @@ class Bot(commands.Bot):
         self.db_client = await self.loop.run_in_executor(
             None, self.connect_to_mongo)
         self.reminders = ReminderService(self)
-        defaults = ['ui.general', 'ui.cx', 'ui.projects', 'ui.tasks',
-                    'ui.developer']
-        extensions = defaults if self.db_client else ['ui.general', 'ui.cx',
-                                                      'ui.developer']
+        defaults = ['handlers.insights', 'ui.developer', 'ui.general',
+                    'ui.cx', 'ui.projects', 'ui.tasks', ]
+        extensions = defaults if self.db_client else ['handlers.insights',
+                                                      'ui.developer',
+                                                      'ui.general', 'ui.cx']
         for i in extensions:
             try:
                 self.load_extension(i)
@@ -253,5 +260,4 @@ class Bot(commands.Bot):
 
 
 flux = Bot(command_prefix=commands.when_mentioned_or(
-    '!?'), help_command=None, guild_subscriptions=False,
-    fetch_offline_members=False)
+    '!?'), help_command=None)

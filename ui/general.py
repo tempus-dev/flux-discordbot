@@ -36,7 +36,7 @@ class General(commands.Cog, name="General"):
         """Helps the user with Flux commands"""
 
         embeds = []
-        blacklisted_cogs = ["Developer"]
+        blacklisted_cogs = ["Developer", "Insights"]
 
         e = discord.Embed(color=ctx.author.color)
         e.set_author(name="Help", icon_url=ctx.bot.user.avatar_url)

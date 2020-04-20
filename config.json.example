@@ -4,5 +4,8 @@
     "db": "flux",
     "contact_channel": null,
     "contact_channel_id": your-channel-id-here,
+    "server_logs": your-server-logs-id-here,
+    "command_logs": your-commands-logs-id-here,
+    "error_logs": your-error-logs-id-here,
     "owners": [ your-discord-id-here ]
 }
