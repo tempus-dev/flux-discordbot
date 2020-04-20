@@ -107,7 +107,7 @@ class Projects(commands.Cog, name="Projects"):
                             channel_id
                         )
                         await channel.delete(reason="Project not found.")
-                        await ctx.send("The chanenl was deleted sucessfully.")
+                        await ctx.send("The channel was deleted sucessfully.")
                         return
 
                     elif reaction.emoji.id == 596576672149667840:  # tick no
@@ -144,8 +144,11 @@ class Projects(commands.Cog, name="Projects"):
         if reaction.emoji.id == 596576670815879169:  # tick yes
             channel = ctx.projects.find_project(
                 project_name).get("channel")
+            channel = discord.utils.get(ctx.guild.channels,
+                                        id=channel)
             ctx.projects.delete_project(project_name)
-            await channel.delete(reason="Project deleted.")
+            if channel:
+                await channel.delete(reason="Project deleted.")
             await ctx.send("The project has been deleted.")
         elif reaction.emoji.id == 596576672149667840:  # tick no
             await ctx.send("Not deleting the project.")
