@@ -10,7 +10,7 @@ class ProjectHandler:
         self.guild = str(guild)
 
     def generate_progress_bar(self, iter, total, prefix='', suffix='',
-                              decimals=1, length=22, fill='█'):
+                              decimals=1, length=22, fill='\u2588'):
         """
         Call in a loop to create terminal progress bar
         @params:

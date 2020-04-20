@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 
 
-class cx(commands.Cog):
+class Support(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -40,4 +40,4 @@ class cx(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(cx(bot))
+    bot.add_cog(Support(bot))

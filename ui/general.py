@@ -16,20 +16,25 @@ class General(commands.Cog, name="General"):
     def __init__(self):
         pass
 
-    def parse_time(self, time: str) -> datetime.datetime:
-        time = re.match(
-            r"(?:(?P<weeks>\d+)w)?(?:\s+)?(?:(?P<days>\d+)d)?(?:\s+)?(?:(?P<hours>\d+)h)?(?:\s+)?(?:(?P<minutes>\d+)m)?(?:\s+)?(?:(?P<seconds>\d+)s)?", time)
-        time = time.groupdict()
-        for k, v in time.items():
-            if time[k] is None:
-                time[k] = 0
-        for k, v in time.items():
-            time[k] = int(v)
-        time = datetime.timedelta(weeks=time.get("weeks"),
-                                  days=time.get("days"), hours=time.get(
-            "hours"), minutes=time.get("minutes"), seconds=time.get("seconds"))
-        time = datetime.datetime.now() - time
-        return time
+    def parse_time(self, time_re: str) -> datetime.datetime:
+        time_re = re.match(
+            r"(?:(?P<weeks>\d+)w)?(?:\s+)?(?:(?P<days>\d+)d)?(?:\s+)?(?:(?P<hours>\d+)h)?(?:\s+)?(?:(?P<minutes>\d+)m)?(?:\s+)?(?:(?P<seconds>\d+)s)?", time_re)
+        time_re = time_re.groupdict()
+        for k, v in time_re.items():
+            if time_re[k] is None:
+                time_re[k] = 0
+        for k, v in time_re.items():
+            time_re[k] = int(v)
+
+        time_re = datetime.timedelta(
+            weeks=time.get("weeks"),
+            days=time.get("days"),
+            hours=time.get("hours"),
+            minutes=time.get("minutes"),
+            seconds=time.get("seconds")
+        )
+        time_re = datetime.datetime.now() - time_re
+        return time_re
 
     @commands.command()
     async def help(self, ctx) -> discord.Message:

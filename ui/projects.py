@@ -100,7 +100,7 @@ class Projects(commands.Cog, name="Projects"):
                         (str(reaction.emoji) == yes or no) and
                         (reaction.message.channel == ctx.channel)
                     )
-                    if reaction.emoji.id == 596576670815879169:  # tick yes
+                    if reaction.emoji.id == ctx.bot.config.tick_yes:
                         channel_id = ctx.projects.find_project(
                             project_name).get("channel")
                         channel = await ctx.guild.fetch_channel(
@@ -110,7 +110,7 @@ class Projects(commands.Cog, name="Projects"):
                         await ctx.send("The channel was deleted sucessfully.")
                         return
 
-                    elif reaction.emoji.id == 596576672149667840:  # tick no
+                    elif reaction.emoji.id == ctx.bot.config.tick_no:
                         await ctx.send("Not deleting the channel.")
                         return
 
@@ -122,7 +122,8 @@ class Projects(commands.Cog, name="Projects"):
                                    )
                     return
             else:
-                return await ctx.send("I could not find this project.")
+                await ctx.send("I could not find this project.")
+                return
 
         if str(ctx.author.id) != ctx.projects.find_project(project_name).get(
                 "owner"):
@@ -141,7 +142,7 @@ class Projects(commands.Cog, name="Projects"):
             (str(reaction.emoji) == yes or no) and
             (reaction.message.channel == ctx.channel)
         )
-        if reaction.emoji.id == 596576670815879169:  # tick yes
+        if reaction.emoji.id == ctx.bot.config.tick_yes:
             channel = ctx.projects.find_project(
                 project_name).get("channel")
             channel = discord.utils.get(ctx.guild.channels,
@@ -150,7 +151,7 @@ class Projects(commands.Cog, name="Projects"):
             if channel:
                 await channel.delete(reason="Project deleted.")
             await ctx.send("The project has been deleted.")
-        elif reaction.emoji.id == 596576672149667840:  # tick no
+        elif reaction.emoji.id == ctx.bot.config.tick_no:
             await ctx.send("Not deleting the project.")
 
     @projects.command()

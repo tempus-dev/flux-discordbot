@@ -79,7 +79,7 @@ class Developer(commands.Cog, name="Developer"):
         {e}```"""
 
     @commands.command()
-    async def git(self, ctx, *pull) -> None:
+    async def git(self, ctx) -> None:
         """Pull code from github."""
         g = git.cmd.Git("./")
         e = discord.Embed(color=ctx.author.color)
