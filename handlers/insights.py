@@ -2,6 +2,7 @@ import string
 import discord
 
 from discord.ext import commands
+from typing import Optional
 from datetime import datetime as dt
 from random import SystemRandom as sysrand
 
@@ -52,7 +53,7 @@ class Insights(commands.Cog):
         await channel.send(embed=embed)
         return uuid
 
-    async def get_server_logs(self) -> discord.TextChannel:
+    async def get_server_logs(self) -> Optional[discord.TextChannel]:
         server_logs = self.bot.config.server_logs
         try:
             chan = await self.bot.fetch_channel(server_logs)
@@ -60,7 +61,7 @@ class Insights(commands.Cog):
             return
         return chan
 
-    async def get_cmd_logs(self) -> discord.TextChannel:
+    async def get_cmd_logs(self) -> Optional[discord.TextChannel]:
         cmd_logs = self.bot.config.command_logs
         try:
             chan = await self.bot.fetch_channel(cmd_logs)
@@ -68,7 +69,7 @@ class Insights(commands.Cog):
             return
         return chan
 
-    async def get_err_logs(self) -> discord.TextChannel:
+    async def get_err_logs(self) -> Optional[discord.TextChannel]:
         err_logs = self.bot.config.error_logs
         try:
             chan = await self.bot.fetch_channel(err_logs)

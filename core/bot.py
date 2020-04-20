@@ -148,6 +148,9 @@ class Bot(commands.Bot):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._last_exception = None
+        self.db_client = None
+        self.reminders = None
         self.helpc = HelpCommand()
         self.logger = logger
         self.flags = Flags
