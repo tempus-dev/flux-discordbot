@@ -266,4 +266,4 @@ class Bot(commands.Bot):
 
 
 flux = Bot(command_prefix=commands.when_mentioned_or(
-    '!?'), help_command=None)
+    '.'), help_command=None)
