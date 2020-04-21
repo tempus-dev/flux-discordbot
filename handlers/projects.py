@@ -65,6 +65,8 @@ class ProjectHandler:
         if not project:
             return
         guild = flux.db("guilds").find(self.guild)
+        if not guild:
+            flux.db("guilds").insert(self.guild, {"projects": []})
         for i in range(len(guild.get("projects"))):
             if guild.get("projects")[i].get('name') == name:
                 del guild['projects'][i]
