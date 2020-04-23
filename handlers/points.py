@@ -9,13 +9,13 @@ class Points:
 
     def add_points(self, guild_id: int, task: dict, points: int):
         guild = flux.db("guilds").find(str(guild_id))
-        if guild.get("points") is None:
+        if not guild.get("points"):
             guild["points"] = {}
             flux.db("guilds").update(str(guild_id), guild)
 
         for member in task.get("assigned"):
             member = str(member)
-            if guild.get("points").get("member") is None:
+            if not guild.get("points").get(member):
                 guild.get("points")[member] = points
                 flux.db("guilds").update(str(guild_id), guild)
                 task_name = task.get("name")
@@ -24,6 +24,8 @@ class Points:
                     {"time": datetime.datetime.now(), "amount": points}
                 )
             else:
+                current_points = guild.get("points")[member]
+                points = points + current_points
                 guild.get("points")[member] = points
                 flux.db("guilds").update(str(guild_id), guild)
                 task_name = task.get("name")
@@ -33,13 +35,13 @@ class Points:
 
     def remove_points(self, guild_id: int, task: dict, points: int):
         guild = flux.db("guilds").find(str(guild_id))
-        if guild.get("points") is None:
+        if not guild.get("points"):
             guild["points"] = {}
             flux.db("guilds").update(str(guild_id), guild)
 
         for member in task.get("assigned"):
             member = str(member)
-            if guild.get("points").get(member) is None:
+            if not guild.get("points").get(member):
                 guild["points"][member] = points
                 flux.db("guilds").update(str(guild_id), guild)
                 task_name = task.get("name")
