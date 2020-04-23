@@ -102,19 +102,19 @@ class HelpCommand(commands.HelpCommand):
     def get_command_signature(self, ctx, cmd):
         """Method to return a commands name and signature"""
         self.context = ctx
-        if not cmd.signature and not cmd.parent:  # checking if it has
+        signature = cmd.signature
+        if not signature and not cmd.parent:  # checking if it has
             # no args and isn't
             # a subcommand
             return f'{self.clean_prefix}{cmd.name}'
-        if cmd.signature and not cmd.parent:  # checking if it has
+        if signature and not cmd.parent:  # checking if it has
             # args and isn't a subcommand
-            return f'{self.clean_prefix}{cmd.name} {cmd.signature}'
-        if not cmd.signature and cmd.parent:  # checking if it has no
+            return f'{self.clean_prefix}{cmd.name} {signature}'
+        if not signature and cmd.parent:  # checking if it has no
             # args and is a subcommand
-            return f'{self.clean_prefix}{cmd.parent} {cmd.name}'
+            return f'{self.clean_prefix}{cmd.parent} {cmd.name} {signature}'
         else:  # else assume it has args a signature and is a subcommand
-            return f'{self.clean_prefix}{cmd.parent} {cmd.name}'
-            f'{cmd.signature}'
+            return f'{self.clean_prefix}{cmd.parent} {cmd.name} {signature}'
 
     # this is a custom written method along with all the others below this
     @staticmethod
@@ -165,11 +165,9 @@ class Bot(commands.Bot):
                 "config", d.keys())(*d.values()))
 
     async def send_cmd_help(self, ctx) -> None:
-        msg = f"""```
-        {self.helpc.get_command_signature(ctx, ctx.command)}
+        msg = f"""```{self.helpc.get_command_signature(ctx, ctx.command)}
 
-        {self.helpc.get_command_help(ctx.command)}
-        ```"""
+{self.helpc.get_command_help(ctx.command)}```"""
         await ctx.send(msg)
 
     async def on_command_error(self, ctx, error):
