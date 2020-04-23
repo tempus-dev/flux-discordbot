@@ -65,8 +65,7 @@ class ProjectHandler:
         if not project:
             return
         guild = flux.db("guilds").find(self.guild)
-        if not guild:
-            flux.db("guilds").insert(self.guild, {"projects": []})
+
         for i in range(len(guild.get("projects"))):
             if guild.get("projects")[i].get('name') == name:
                 del guild['projects'][i]
@@ -76,6 +75,9 @@ class ProjectHandler:
     def find_project(self, name: str) -> dict:
         """This searches for a project within a given guild."""
         guild = flux.db("guilds").find(self.guild)
+        if not guild:
+            flux.db("guilds").insert(self.guild, {"projects": []})
+            return
         projects = guild.get("projects")
         if not projects:
             return
