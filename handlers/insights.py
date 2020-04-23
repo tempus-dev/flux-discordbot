@@ -14,7 +14,7 @@ class Insights(commands.Cog):
         self.bot = bot
 
     def increment_cmd(self, cmd) -> None:
-        db = self.bot.db("insights")
+        db = self.bot.db("logs")
         if not db.find(cmd):
             db.insert(cmd, {"usage": 1})
             return
@@ -23,7 +23,7 @@ class Insights(commands.Cog):
 
     async def log_error(self, ctx, error) -> str:
         cmd = ctx.command.qualified_name
-        db = self.bot.db('insights')
+        db = self.bot.db('logs')
         if not db.find("errors"):
             db.insert("errors", {})
         lower = string.ascii_lowercase
@@ -79,7 +79,7 @@ class Insights(commands.Cog):
 
     @commands.command()
     async def error(self, ctx, uuid: str) -> None:
-        db = self.bot.db('insights')
+        db = self.bot.db('logs')
         if not db.find("errors"):
             await ctx.send("Doesn't exist.")
         elif not db.find('errors').get(uuid):
