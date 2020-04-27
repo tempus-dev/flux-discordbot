@@ -178,6 +178,7 @@ class Projects(commands.Cog, name="Projects"):
         if str(ctx.author.id) != ctx.projects.find_project(project).get(
                 "owner"):
             await ctx.send("You can't add members to this project.")
+            return
         members = members if len(members) > 0 else [ctx.author]
         count = len(members)
         channel = ctx.guild.get_channel(
