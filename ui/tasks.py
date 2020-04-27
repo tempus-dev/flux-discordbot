@@ -16,24 +16,25 @@ class Tasks(commands.Cog, name="Tasks"):
     def __init__(self, bot):
         self.bot = bot
 
-    def parse_time(self, time: str) -> datetime.datetime:
-        time = re.match(
-            r"(?:(?P<weeks>\d+)w)?(?:\s+)?(?:(?P<days>\d+)d)?(?:\s+)?(?:(?P<hours>\d+)h)?(?:\s+)?(?:(?P<minutes>\d+)m)?(?:\s+)?(?:(?P<seconds>\d+)s)?", time)
-        time = time.groupdict()
-        for k, v in time.items():
-            if time[k] is None:
-                time[k] = 0
-        for k, v in time.items():
-            time[k] = int(v)
-        time = datetime.timedelta(
-            weeks=time.get("weeks"),
-            days=time.get("days"),
-            hours=time.get("hours"),
-            minutes=time.get("minutes"),
-            seconds=time.get("seconds")
+    def parse_time(self, time_re: str) -> datetime.datetime:
+        time_re = re.match(
+            r"(?:(?P<weeks>\d+)w)?(?:\s+)?(?:(?P<days>\d+)d)?(?:\s+)?(?:(?P<hours>\d+)h)?(?:\s+)?(?:(?P<minutes>\d+)m)?(?:\s+)?(?:(?P<seconds>\d+)s)?", time_re)
+        time_re = time_re.groupdict()
+        for k, v in time_re.items():
+            if not time_re[k]:
+                time_re[k] = 0
+        for k, v in time_re.items():
+            time_re[k] = int(v)
+
+        time_re = datetime.timedelta(
+            weeks=time_re.get("weeks"),
+            days=time_re.get("days"),
+            hours=time_re.get("hours"),
+            minutes=time_re.get("minutes"),
+            seconds=time_re.get("seconds")
         )
-        time = datetime.datetime.now() - time
-        return time
+        time_re = datetime.datetime.now() - time_re
+        return time_re
 
     @commands.group(hidden=True)
     async def tasks(self, ctx) -> None:
@@ -50,15 +51,18 @@ class Tasks(commands.Cog, name="Tasks"):
                 ctx.projects.find_project(project).get("owner"):
             await ctx.send("You can't create tasks on this project.")
             return
-        due = " ".join(due)
-        time = self.parse_time(due)
-        task = ctx.projects.create_task(project, name, reward, time)
-        total_seconds = (datetime.datetime.now() - time).seconds
+        due = "".join(due)
+        due = self.parse_time(due)
+        task = ctx.projects.create_task(project, name, reward, due)
+        total_seconds = (datetime.datetime.now() - due).seconds
 
         async def _call_event():
             return ctx.bot.dispatch("task_due", ctx.guild.id, task)
         Scheduler(total_seconds, _call_event())
-        return await ctx.send("Task created!")
+        ctx.projects.update_task_members(
+            project, task.get("name"), [str(ctx.author.id)])
+        await ctx.send("Task created!")
+        return
 
     @tasks.command()
     async def assign(self, ctx, task: str, project: str,
@@ -69,6 +73,9 @@ class Tasks(commands.Cog, name="Tasks"):
         if str(ctx.author.id) not in \
                 ctx.projects.find_project(project).get("owner"):
             await ctx.send("You can't assign members to this task.")
+            return
+        if not task:
+            await ctx.end("This task does not exist.")
             return
         members = members if len(members) > 0 else [ctx.author]
         count = len(members)
@@ -101,12 +108,27 @@ class Tasks(commands.Cog, name="Tasks"):
         This command is limited to the owner of the provided project,
         and the members assigned to the provided task."""
 
+        task = ctx.projects.find_task(project, task)
+        if not task:
+            await ctx.send("This task does not exist.")
+            return
+
         if str(ctx.author.id) not in \
-            ctx.projects.find_project(project).get("owner") and \
+                ctx.projects.find_project(project).get("owner") and \
                 str(ctx.author.id) not in task.get("assigned"):
-            return await ctx.send("You can't mark this task as complete.")
-        ctx.projects.update_task_status(project, task, True)
-        return await ctx.send(f"Marked `{task}` as completed!")
+            await ctx.send("You weren't assigned to this task."
+                           " Request the project owner to assign"
+                           " you to change it's status.")
+            return
+
+        task = ctx.projects.update_task_status(
+            project,
+            task.get("name"),
+            True
+        )
+        name = task.get("name")
+        await ctx.send(f"Task `{name}` is now completed!")
+        return
 
     @tasks.command()
     async def incomplete(self, ctx, task: str,
@@ -115,13 +137,28 @@ class Tasks(commands.Cog, name="Tasks"):
 
         This command is limited to the owner of the provided project,
         and the members assigned to the provided task."""
+        task = ctx.projects.find_task(project, task)
+        if not task:
+            await ctx.send("This task does not exist.")
+            return
 
         if str(ctx.author.id) not in \
                 ctx.projects.find_project(project).get("owner") and \
                 str(ctx.author.id) not in task.get("assigned"):
-            await ctx.send("You can't mark this task as incomplete.")
-        ctx.projects.update_task_status(project, task, False)
-        await ctx.send(f"Marked `{task}` as incomplete.")
+            await ctx.send("You weren't assigned to this task."
+                           " Request the project owner to assign"
+                           " you to change it's status.")
+            return
+
+        task = ctx.projects.update_task_status(
+            project,
+            task.get("name"),
+            False
+        )
+        name = task.get("name")
+        await ctx.send(f"Task `{name}` is pending again. Bounty restored.")
+
+        return
 
     @commands.Cog.listener()
     async def on_task_member_update(self, task: dict, guild_id: int,
@@ -206,10 +243,9 @@ class Tasks(commands.Cog, name="Tasks"):
         for member in task.get("assigned"):
             task_name = task.get("name")
             logs = list(filter(
-                lambda all_logs: all_logs['name'] == f"point_addition_{member}"
-                                                     f"_{task_name}"),
-                        all_logs
-                        )
+                lambda all_logs: all_logs['name'] == f"point_addition_{member}_{task_name}",
+                all_logs
+                ))
             points_gained = [log.get("amount") for log in logs]
             for points in points_gained:
                 pointhandler.remove_points(guild_id, task, points)
