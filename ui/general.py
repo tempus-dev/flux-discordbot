@@ -21,17 +21,17 @@ class General(commands.Cog, name="General"):
             r"(?:(?P<weeks>\d+)w)?(?:\s+)?(?:(?P<days>\d+)d)?(?:\s+)?(?:(?P<hours>\d+)h)?(?:\s+)?(?:(?P<minutes>\d+)m)?(?:\s+)?(?:(?P<seconds>\d+)s)?", time_re)
         time_re = time_re.groupdict()
         for k, v in time_re.items():
-            if time_re[k] is None:
+            if not time_re[k]:
                 time_re[k] = 0
         for k, v in time_re.items():
             time_re[k] = int(v)
 
         time_re = datetime.timedelta(
-            weeks=time.get("weeks"),
-            days=time.get("days"),
-            hours=time.get("hours"),
-            minutes=time.get("minutes"),
-            seconds=time.get("seconds")
+            weeks=time_re.get("weeks"),
+            days=time_re.get("days"),
+            hours=time_re.get("hours"),
+            minutes=time_re.get("minutes"),
+            seconds=time_re.get("seconds")
         )
         time_re = datetime.datetime.now() - time_re
         return time_re
@@ -42,6 +42,7 @@ class General(commands.Cog, name="General"):
 
         embeds = []
         blacklisted_cogs = ["Developer", "Insights"]
+        prefix = ctx.prefix
 
         e = discord.Embed(color=ctx.author.color)
         e.set_author(name="Help", icon_url=ctx.bot.user.avatar_url)
@@ -83,10 +84,10 @@ To use the interactive help menu use the reactions:
                             params = "<" + ">, <".join(params) + ">"
                             if params == "<>":
                                 params = ""
-                                pa = params  # short lines.
                             embed.add_field(
-                                name=f"**{ctx.prefix}{command.name}** {pa}",
+                                name=f"**{prefix}{command.name}** {params}",
                                 value=command.help, inline=False)
+
                     embeds.append(embed)
         p = BotEmbedPaginator(ctx, embeds)
         return await p.run()
@@ -103,7 +104,7 @@ To use the interactive help menu use the reactions:
         await ctx.send(f"🏓 | My ping is **{ping}ms!**")
 
     @commands.command()
-    async def remind(self, ctx, to_remind: str, *time) -> discord.Message:
+    async def remind(self, ctx, to_remind: str, *duration) -> discord.Message:
         """A reminder command.
 
         You can put 2+ words by putting your reminder message in quotes.
@@ -112,24 +113,31 @@ To use the interactive help menu use the reactions:
             return await ctx.send("Without the database running, this command"
                                   " is defunct. "
                                   "Please contact the bot maintainer.")
-        time = " ".join(time)
-        time = self.parse_time(time)
+        if not duration:
+            raise commands.MissingRequiredArgument(
+                ctx.commmand.clean_params['duration']
+            )
+        duration = " ".join(duration)
+        duration = self.parse_time(duration)
         await ReminderService(ctx.bot).new_reminder(
-            ctx.author.id, to_remind, time)
+            ctx.author.id, to_remind, duration)
         return await ctx.send("Reminder set!")
 
     @commands.command()
     async def leaderboard(self, ctx):
         """This shows a leaderboard of all the points."""
         if not ctx.bot.db_client:
-            return await ctx.send("Without the database running, this command"
-                                  " is defunct. "
-                                  "Please contact the bot maintainer.")
+            await ctx.send("Without the database running, this command"
+                           " is defunct. "
+                           "Please contact the bot maintainer."
+                           )
+            return
         leaderboardhandler = Leaderboard()
         points = ctx.bot.db("guilds").find(str(ctx.guild.id)).get("points")
-        if points is None:
+        if not points:
             ctx.bot.db("guilds").update(str(ctx.guild.id), {"points": {}})
-            return await ctx.send("No one has any points.  o.o")
+            await ctx.send("No one has any points.")
+            return
         users = {}
         for k, v in points.items():
             users[k] = {"points": v}
