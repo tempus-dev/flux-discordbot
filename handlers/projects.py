@@ -200,10 +200,26 @@ class ProjectHandler:
         task = self.find_task(project, task)
         if task.get("completed") == status:
             return task
+        if not task:
+            return
         project = self.find_project(task.get("project"))
+        if not project:
+            return
         guild_db = flux.db("guilds").find(self.guild)
-        guild_db["projects"][project.get("number")]["tasks"][task.get(
-            "number")]["completed"] = status
+        i = 0
+        for iteration in guild_db['projects']:
+            i += 1
+            if iteration['name'] == project['name']:
+                print(iteration)
+                break
+        j = 0
+        for iteration in project['tasks']:
+            j += 1
+            if iteration['name'] == task['name']:
+                print(iteration)
+                break
+        print(f"i: {i} j: {j}")
+        guild_db["projects"][i-1]["tasks"][j-1]["completed"] = status
         flux.db("guilds").update(self.guild, guild_db)
         if status is True:
             flux.dispatch("task_complete", self.guild, task)
