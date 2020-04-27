@@ -246,7 +246,7 @@ class Bot(commands.Bot):
             None, self.connect_to_mongo)
         self.reminders = ReminderService(self)
         defaults = ['handlers.insights', 'ui.developer', 'ui.general',
-                    'ui.cx', 'ui.projects', 'ui.tasks', ]
+                    'ui.support', 'ui.projects', 'ui.tasks', ]
         extensions = defaults if self.db_client else ['handlers.insights',
                                                       'ui.developer',
                                                       'ui.general', 'ui.cx']
