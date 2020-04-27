@@ -123,6 +123,38 @@ To use the interactive help menu use the reactions:
             ctx.author.id, to_remind, duration)
         return await ctx.send("Reminder set!")
 
+    @commands.command(name='points')
+    async def points(self, ctx, user: discord.Member = None) -> None:
+        """Check yours or someone else's points."""
+        if not ctx.bot.db_client:
+            await ctx.send("Without the database running, this command"
+                           " is defunct. "
+                           "Please use `.contact` with error:"
+                           " `ERR_CONN_FAILURE`"
+                           )
+            return
+
+        if not user:
+            user = ctx.author
+        points = ctx.bot.db("guilds").find(str(ctx.guild.id)).get("points")
+
+        if not points:
+            await ctx.send("No one has any points.")
+            return
+
+        if not points.get(str(user.id)):
+            await ctx.send(f"You have no points.") if \
+                ctx.author == user else \
+                await ctx.send(f"`{user}` has no points.")
+            return
+
+        points = f"{points} points" if points != 1 else f"{points} point"
+
+        await ctx.send(f"`{user}` has `{points}`.") if not \
+            user == ctx.author else \
+            await ctx.send(f"You have `{points}`.")
+        return
+
     @commands.command()
     async def leaderboard(self, ctx):
         """This shows a leaderboard of all the points."""
