@@ -73,7 +73,7 @@ class Developer(commands.Cog, name="Developer"):
         return content.strip('` \n')
 
     def get_syntax_error(self, e):
-        if e.text is None:
+        if not e.text:
             return f'```py\n{e.__class__.__name__}: {e}\n```'
         return f"""```py\n{e.text}{"^":>{e.offset}}\n{e.__class__.__name__}:
         {e}```"""
@@ -135,7 +135,7 @@ class Developer(commands.Cog, name="Developer"):
             except Exception:
                 pass
 
-            if ret is None:
+            if not ret:
                 if value:
                     for page in pagify(text=f"{value}"):
                         await ctx.send(box(page, lang="py"))

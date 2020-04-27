@@ -43,10 +43,10 @@ class ProjectHandler:
             "number": None
         }
         guild_db = flux.db("guilds").find(self.guild)
-        if guild_db is None:
+        if not guild_db:
             project["number"] = 0
             flux.db("guilds").insert(self.guild, {"projects": [project]})
-        elif guild_db.get("projects") is None:
+        elif not guild_db.get("projects"):
             project["number"] = 0
             flux.db("guilds").update(self.guild, {"projects": [project]})
         else:
@@ -65,8 +65,7 @@ class ProjectHandler:
         if not project:
             return
         guild = flux.db("guilds").find(self.guild)
-        if not guild:
-            flux.db("guilds").insert(self.guild, {"projects": []})
+
         for i in range(len(guild.get("projects"))):
             if guild.get("projects")[i].get('name') == name:
                 del guild['projects'][i]
@@ -76,6 +75,9 @@ class ProjectHandler:
     def find_project(self, name: str) -> dict:
         """This searches for a project within a given guild."""
         guild = flux.db("guilds").find(self.guild)
+        if not guild:
+            flux.db("guilds").insert(self.guild, {"projects": []})
+            return
         projects = guild.get("projects")
         if not projects:
             return
@@ -91,7 +93,7 @@ class ProjectHandler:
     def project_completion(self, project: str) -> int:
         """This returns how close a project is to completion, out of 100."""
         guild = flux.db("guilds").find(self.guild)
-        if guild is None or guild.get("projects") is None:
+        if (not guild) or (guild.get("projects")):
             return
         project = next((item for item in guild.get("projects")
                         if item["name"] == project), None)
@@ -109,7 +111,7 @@ class ProjectHandler:
     def project_progress_bar(self, project: str) -> int:
         """This returns how close a project is to completion, out of 100."""
         guild = flux.db("guilds").find(self.guild)
-        if guild is None or guild.get("projects") is None:
+        if (not guild) or (guild.get("projects")):
             return
         project = next((item for item in guild.get("projects")
                         if item["name"] == project), None)
@@ -198,10 +200,26 @@ class ProjectHandler:
         task = self.find_task(project, task)
         if task.get("completed") == status:
             return task
+        if not task:
+            return
         project = self.find_project(task.get("project"))
+        if not project:
+            return
         guild_db = flux.db("guilds").find(self.guild)
-        guild_db["projects"][project.get("number")]["tasks"][task.get(
-            "number")]["completed"] = status
+        i = 0
+        for iteration in guild_db['projects']:
+            i += 1
+            if iteration['name'] == project['name']:
+                print(iteration)
+                break
+        j = 0
+        for iteration in project['tasks']:
+            j += 1
+            if iteration['name'] == task['name']:
+                print(iteration)
+                break
+        print(f"i: {i} j: {j}")
+        guild_db["projects"][i-1]["tasks"][j-1]["completed"] = status
         flux.db("guilds").update(self.guild, guild_db)
         if status is True:
             flux.dispatch("task_complete", self.guild, task)

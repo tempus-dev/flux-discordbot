@@ -34,17 +34,22 @@ class Projects(commands.Cog, name="Projects"):
                                "I will be overwriting the previous project.")
                 ctx.projects.delete_project(name)
 
-        owner = owner if owner is not None else ctx.author
-        if ctx.bot.db("guilds").find(str(ctx.guild.id)) is None:
+        owner = owner if owner else ctx.author
+        if not ctx.bot.db("guilds").find(str(ctx.guild.id)):
             ctx.bot.db("guilds").insert(str(ctx.guild.id), ctx.bot.empty_guild)
 
         # await ctx.send("Creating project channel...")
-        if ctx.bot.db("guilds").find(
-                str(ctx.guild.id)).get("project_category") is None:
-            overwrites = {ctx.guild.default_role: discord.PermissionOverwrite(
-                read_messages=False),
+        if not ctx.bot.db("guilds").find(
+                str(ctx.guild.id)).get("project_category"):
+            overwrites = {
+                ctx.guild.default_role: discord.PermissionOverwrite(
+                    read_messages=False
+                ),
                 ctx.me: discord.PermissionOverwrite(
-                read_messages=True, send_messages=True)
+                    read_messages=True,
+                    send_messages=True,
+                    manage_channels=True
+                )
             }
             category = await ctx.guild.create_category("Flux Projects",
                                                        overwrites=overwrites)
@@ -67,14 +72,14 @@ class Projects(commands.Cog, name="Projects"):
         channel = await ctx.guild.create_text_channel(f"{name}-project",
                                                       category=category,
                                                       overwrites=overwrites)
-        await channel.send(f"Project Owner: {ctx.author}")
+        await channel.send(f"Project Owner: {owner}")
         message = await channel.send(self.empty_progress_bar)
         await message.pin()
         res = ctx.projects.create_project(
             owner.id, owner.id, name, channel.id, message.id)
-        if res is None:
+        if not res:
             return await ctx.send("An error has occurred. Use `.contact`"
-                                  " with error: `PROJECT_STILL_EXISTS`")
+                                  " with error: `ERR_PROJECT_STILL_EXISTS`")
         return await ctx.send("Project created!")
 
     @projects.command()
@@ -85,7 +90,7 @@ class Projects(commands.Cog, name="Projects"):
                 ctx.guild.channels, name=f"{project_name}-project")
 
             if channel and channel.category.name == "Flux Projects":
-                if ctx.author.permissions_in(channel).manage_channel:
+                if ctx.author.permissions_in(channel).manage_channels:
                     message = await ctx.send("That project doesn't appear to"
                                              " exist in my database, but the "
                                              "channel still exists. "
@@ -101,11 +106,6 @@ class Projects(commands.Cog, name="Projects"):
                         (reaction.message.channel == ctx.channel)
                     )
                     if reaction.emoji.id == ctx.bot.config.tick_yes:
-                        channel_id = ctx.projects.find_project(
-                            project_name).get("channel")
-                        channel = await ctx.guild.fetch_channel(
-                            channel_id
-                        )
                         await channel.delete(reason="Project not found.")
                         await ctx.send("The channel was deleted sucessfully.")
                         return
@@ -127,11 +127,12 @@ class Projects(commands.Cog, name="Projects"):
 
         if str(ctx.author.id) != ctx.projects.find_project(project_name).get(
                 "owner"):
-            await ctx.send("Only the owner can delete the project.")
+            await ctx.send("Only the project owner "
+                           "can delete this project.")
             return
-        message = await ctx.send("This action __cannot__ be undone. "
-                                 "Once you do this, everything is gone. "
-                                 "Are you sure you want to continue?")
+        await ctx.send("This action __cannot__ be undone. "
+                       "Once you do this, everything is gone. "
+                       "Are you sure you want to continue?")
         yes = "<:greenTick:596576670815879169>"
         no = "<:redTick:596576672149667840>"
         await message.add_reaction(yes)
@@ -146,7 +147,7 @@ class Projects(commands.Cog, name="Projects"):
             channel = ctx.projects.find_project(
                 project_name).get("channel")
             channel = discord.utils.get(ctx.guild.channels,
-                                        id=channel)
+                                        id=int(channel))
             ctx.projects.delete_project(project_name)
             if channel:
                 await channel.delete(reason="Project deleted.")
@@ -157,8 +158,11 @@ class Projects(commands.Cog, name="Projects"):
     @projects.command()
     async def status(self, ctx, project_name: str) -> discord.Message:
         """This returns the status of a project."""
+        if not ctx.projects.find_project(project_name):
+            await ctx.send("This project doesn't exist.")
+            return
         progress_bar = ctx.projects.project_progress_bar(project_name)
-        if progress_bar is None:
+        if not progress_bar:
             progress_bar = self.empty_progress_bar
         await ctx.send(progress_bar)
 
@@ -168,6 +172,9 @@ class Projects(commands.Cog, name="Projects"):
         """This adds as many project members as you want to your project.
         This command is limited to the project owner only."""
         project = project_name
+        if not ctx.projects.find_project(project_name):
+            await ctx.send("This project doesn't exist.")
+            return
         if str(ctx.author.id) != ctx.projects.find_project(project).get(
                 "owner"):
             await ctx.send("You can't add members to this project.")

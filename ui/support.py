@@ -6,8 +6,8 @@ class Support(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
-    async def contact(self, ctx, *message) -> discord.Message:
+    @commands.command(name='contact')
+    async def contact(self, ctx, *, message) -> discord.Message:
         """Contacts the developers for any issues."""
         cfg = self.bot.config
         try:
@@ -18,7 +18,7 @@ class Support(commands.Cog):
         except discord.errors.NotFound:
             contact_channel = await self.bot.fetch_user(cfg.owners[0])
 
-        message = " ".join(message)
+        message = "".join(message)
         if len(message) > 1000:
             return await ctx.send("Your request is a fairly long! "
                                   "Please shorten it, and if that isn't "
@@ -36,7 +36,7 @@ class Support(commands.Cog):
         await ctx.send("The message has been sent successfully! "
                        "Make sure your DMs are open to receive the response, "
                        "and the developers will get back to "
-                       "you when they can")
+                       "you when they can.")
 
 
 def setup(bot):
