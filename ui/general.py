@@ -136,6 +136,10 @@ To use the interactive help menu use the reactions:
 
         if not user:
             user = ctx.author
+        if not ctx.bot.db("guilds").find(str(ctx.guild.id)):
+            await ctx.send("No one has any points.")
+            return
+
         points = ctx.bot.db("guilds").find(str(ctx.guild.id)).get("points")
 
         if not points:
@@ -165,6 +169,9 @@ To use the interactive help menu use the reactions:
                            )
             return
         leaderboardhandler = Leaderboard()
+        if not ctx.bot.db("guilds").find(str(ctx.guild.id)):
+            await ctx.send("No one has any points.")
+            return
         points = ctx.bot.db("guilds").find(str(ctx.guild.id)).get("points")
         if not points:
             ctx.bot.db("guilds").update(str(ctx.guild.id), {"points": {}})
