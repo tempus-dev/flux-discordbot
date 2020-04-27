@@ -43,10 +43,10 @@ class ProjectHandler:
             "number": None
         }
         guild_db = flux.db("guilds").find(self.guild)
-        if guild_db is None:
+        if not guild_db:
             project["number"] = 0
             flux.db("guilds").insert(self.guild, {"projects": [project]})
-        elif guild_db.get("projects") is None:
+        elif not guild_db.get("projects"):
             project["number"] = 0
             flux.db("guilds").update(self.guild, {"projects": [project]})
         else:
@@ -93,7 +93,7 @@ class ProjectHandler:
     def project_completion(self, project: str) -> int:
         """This returns how close a project is to completion, out of 100."""
         guild = flux.db("guilds").find(self.guild)
-        if guild is None or guild.get("projects") is None:
+        if (not guild) or (guild.get("projects")):
             return
         project = next((item for item in guild.get("projects")
                         if item["name"] == project), None)
@@ -111,7 +111,7 @@ class ProjectHandler:
     def project_progress_bar(self, project: str) -> int:
         """This returns how close a project is to completion, out of 100."""
         guild = flux.db("guilds").find(self.guild)
-        if guild is None or guild.get("projects") is None:
+        if (not guild) or (guild.get("projects")):
             return
         project = next((item for item in guild.get("projects")
                         if item["name"] == project), None)
