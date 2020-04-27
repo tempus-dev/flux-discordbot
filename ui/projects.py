@@ -130,9 +130,9 @@ class Projects(commands.Cog, name="Projects"):
             await ctx.send("Only the project owner "
                            "can delete this project.")
             return
-        await ctx.send("This action __cannot__ be undone. "
-                       "Once you do this, everything is gone. "
-                       "Are you sure you want to continue?")
+        message = await ctx.send("This action __cannot__ be undone. "
+                                 "Once you do this, everything is gone. "
+                                 "Are you sure you want to continue?")
         yes = "<:greenTick:596576670815879169>"
         no = "<:redTick:596576672149667840>"
         await message.add_reaction(yes)
