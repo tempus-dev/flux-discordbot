@@ -42,11 +42,11 @@ class Tasks(commands.Cog, name="Tasks"):
         ctx.projects = ProjectHandler(ctx.guild.id)
 
     @tasks.command()
-    async def create(self, ctx, name: str, project: str, reward: int, *,
-                     due: str) -> None:
+    async def create(self, ctx, name: str, project: str,
+                     points_gained_when_completed: int, *, due: str) -> None:
         """This creates a task.
         This command is limited to the owner of the provided project."""
-
+        reward = points_gained_when_completed  # Helpful params!
         if str(ctx.author.id) not in \
                 ctx.projects.find_project(project).get("owner"):
             await ctx.send("You can't create tasks on this project.")
@@ -69,12 +69,15 @@ class Tasks(commands.Cog, name="Tasks"):
                      members: commands.Greedy[discord.Member]) -> None:
         """This assigns members to a project.
         This command is limited to the owner of the provided project."""
-
+        if not ctx.projects.find_project(project):
+            await ctx.send("I couldn't find this project.")
+            return
         if str(ctx.author.id) not in \
                 ctx.projects.find_project(project).get("owner"):
             await ctx.send("You can't assign members to this task.")
             return
-        if not task:
+        task_dict = ctx.projects.find_task(project, task)
+        if not task_dict:
             await ctx.end("This task does not exist.")
             return
         members = members if len(members) > 0 else [ctx.author]
@@ -245,7 +248,7 @@ class Tasks(commands.Cog, name="Tasks"):
             logs = list(filter(
                 lambda all_logs: all_logs['name'] == f"point_addition_{member}_{task_name}",
                 all_logs
-                ))
+            ))
             points_gained = [log.get("amount") for log in logs]
             for points in points_gained:
                 pointhandler.remove_points(guild_id, task, points)
