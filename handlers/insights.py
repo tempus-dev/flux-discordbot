@@ -21,7 +21,35 @@ class Insights(commands.Cog):
         usage = db.find(cmd)['usage']
         db.update(cmd, {"usage": usage + 1})
 
-    async def log_error(self, ctx, error) -> str:
+    async def log_error(self, error) -> str:
+        db = self.bot.db('logs')
+        if not db.find("errors"):
+            db.insert("errors", {})
+        lower = string.ascii_lowercase
+        digits = string.digits
+        uuid = ''.join(sysrand().choice(lower + digits) for _ in range(8))
+        err = {
+            uuid: {
+                "cmd": None,
+                "error": error,
+                "author": None,
+                "channel": None,
+                "guild": None,
+                "time": None
+            }
+        }
+        db.update("errors", err)
+        embed = discord.Embed()
+        embed.title = f"Non command exception occurred"
+        embed.description = f"```py\n{error}\n```"
+        embed.timestamp = dt.now()  # TODO: confirm that I can pass dt.now()
+        embed.set_author(name=f"Error ID: {uuid}")
+
+        channel = await self.get_err_logs()
+        await channel.send(embed=embed)
+        return uuid
+
+    async def log_cmd_error(self, ctx, error) -> str:
         cmd = ctx.command.qualified_name
         db = self.bot.db('logs')
         if not db.find("errors"):

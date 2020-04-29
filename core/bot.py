@@ -211,7 +211,7 @@ class Bot(commands.Bot):
             try:
                 raise error
             except Exception:
-                uuid = await Insights(self).log_error(ctx, log)
+                uuid = await Insights(self).log_cmd_error(ctx, log)
                 if ctx.author.id in self.config.owners:
                     await ctx.send("DEBUG: This command silently errored. "
                                    f"ID: {uuid}")
@@ -228,7 +228,9 @@ class Bot(commands.Bot):
         db_client = MongoClient(self.config.uri)[self.config.db]
         try:
             db_client.collection_names()
-        except Exception:
+        except Exception as e:
+            traceback.print_exception(type(e), e, e.__traceback__,
+                                      file=sys.stderr)
             db_client = None
             logger.warning(
                 "MongoDB connection failed. There will be no MongoDB support.")
@@ -249,12 +251,24 @@ class Bot(commands.Bot):
                     'ui.support', 'ui.projects', 'ui.tasks', ]
         extensions = defaults if self.db_client else ['handlers.insights',
                                                       'ui.developer',
-                                                      'ui.general', 'ui.cx']
+                                                      'ui.general',
+                                                      'ui.support']
         for i in extensions:
             try:
                 self.load_extension(i)
             except discord.ext.commands.errors.ExtensionAlreadyLoaded:
-                break
+                continue
+            except Exception as e:
+                log = f"Exception in extension {i}\n"
+                log += "".join(traceback.format_exception(type(e), e,
+                                                          e.__traceback__))
+                self._last_exception = log
+                uuid = await Insights(self).log_error(log)
+                print(f"An error occured while loading extension {i}:",
+                      file=sys.stderr)
+                logger.warning(f"Error ID: {uuid}")
+                traceback.print_exception(type(e), e, e.__traceback__,
+                                          file=sys.stderr)
         print("Ready.")
 
     async def on_resumed(self):
