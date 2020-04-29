@@ -18,7 +18,8 @@ class General(commands.Cog, name="General"):
 
     def parse_time(self, time_re: str) -> datetime.datetime:
         time_re = re.match(
-            r"(?:(?P<weeks>\d+)w)?(?:\s+)?(?:(?P<days>\d+)d)?(?:\s+)?(?:(?P<hours>\d+)h)?(?:\s+)?(?:(?P<minutes>\d+)m)?(?:\s+)?(?:(?P<seconds>\d+)s)?", time_re)
+            # TODO Get rid of the duplicate instance of this regex in tasks.py
+            r"(?:(?P<weeks>\d+)w)?(?:\s+)?(?:(?P<days>\d+)d)?(?:\s+)?(?:(?P<hours>\d+)h)?(?:\s+)?(?:(?P<minutes>\d+)m)?(?:\s+)?(?:(?P<seconds>\d+)s)?", time_re)  # noqa: E501
         time_re = time_re.groupdict()
         for k, v in time_re.items():
             if not time_re[k]:

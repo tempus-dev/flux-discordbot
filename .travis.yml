@@ -1,0 +1,12 @@
+language: python
+python:
+- '3.8'
+
+install:
+- pip install -r requirements.txt
+
+jobs:
+  include:
+    - stage: lint
+      before_script: pip install flake8
+      script: flake8 .
