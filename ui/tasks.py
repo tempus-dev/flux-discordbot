@@ -18,7 +18,7 @@ class Tasks(commands.Cog, name="Tasks"):
 
     def parse_time(self, time_re: str) -> datetime.datetime:
         time_re = re.match(
-            r"(?:(?P<weeks>\d+)w)?(?:\s+)?(?:(?P<days>\d+)d)?(?:\s+)?(?:(?P<hours>\d+)h)?(?:\s+)?(?:(?P<minutes>\d+)m)?(?:\s+)?(?:(?P<seconds>\d+)s)?", time_re)
+            r"(?:(?P<weeks>\d+)w)?(?:\s+)?(?:(?P<days>\d+)d)?(?:\s+)?(?:(?P<hours>\d+)h)?(?:\s+)?(?:(?P<minutes>\d+)m)?(?:\s+)?(?:(?P<seconds>\d+)s)?", time_re)  # noqa: E501
         time_re = time_re.groupdict()
         for k, v in time_re.items():
             if not time_re[k]:
@@ -246,7 +246,8 @@ class Tasks(commands.Cog, name="Tasks"):
         for member in task.get("assigned"):
             task_name = task.get("name")
             logs = list(filter(
-                lambda all_logs: all_logs['name'] == f"point_addition_{member}_{task_name}",
+                lambda all_logs: all_logs['name']
+                == f"point_addition_{member}_{task_name}",
                 all_logs
             ))
             points_gained = [log.get("amount") for log in logs]
