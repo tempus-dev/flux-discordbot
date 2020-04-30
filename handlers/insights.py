@@ -46,7 +46,18 @@ class Insights(commands.Cog):
         embed.set_author(name=f"Error ID: {uuid}")
 
         channel = await self.get_err_logs()
-        await channel.send(embed=embed)
+        try:
+            await channel.send(embed=embed)
+        except discord.errors.HTTPException:
+            desc = embed.description
+            first = desc[:2044] + '\n```'
+            second = '```py\n' + desc[2044:]
+            embed.description = first
+            await channel.send(embed=embed)
+            embed = discord.Embed(
+                title="Exception continued", description=second)
+            await channel.send(embed=embed)
+
         return uuid
 
     async def log_cmd_error(self, ctx, error) -> str:
@@ -78,7 +89,18 @@ class Insights(commands.Cog):
         embed.set_author(name=f"Error ID: {uuid}")
 
         channel = await self.get_err_logs()
-        await channel.send(embed=embed)
+        try:
+            await channel.send(embed=embed)
+        except discord.errors.HTTPException:
+            desc = embed.description
+            first = desc[:2044] + '\n```'
+            second = '```py\n' + desc[2044:]
+            embed.description = first
+            await channel.send(embed=embed)
+            embed = discord.Embed(
+                title="Exception continued", description=second)
+            await channel.send(embed=embed)
+
         return uuid
 
     async def get_server_logs(self) -> Optional[discord.TextChannel]:
@@ -159,10 +181,15 @@ class Insights(commands.Cog):
             timestamp=ctx.message.created_at)
         embed.timestamp = ctx.message.created_at
         embed.add_field(name="Author", value=ctx.author, inline=True)
-        embed.add_field(name="Guild", value=ctx.guild.name, inline=True)
-        embed.add_field(name="Channel", value=ctx.channel.name, inline=True)
-        embed.set_footer(
-            text=f"{ctx.author.id} • {ctx.guild.id} • {ctx.channel.id}")
+        if ctx.guild:
+            embed.add_field(name="Guild", value=ctx.guild.name, inline=True)
+            embed.add_field(name="Channel", value=ctx.channel.name,
+                            inline=True)
+            embed.set_footer(
+                text=f"{ctx.author.id} • {ctx.guild.id} • {ctx.channel.id}")
+        else:
+            embed.add_field(name="Channel", value="DMs", inline=True)
+            embed.set_footer(text=f"{ctx.author.id}")
         self.increment_cmd(ctx.command.qualified_name)
         channel = await self.get_cmd_logs()
         await channel.send(embed=embed)
