@@ -218,6 +218,7 @@ To use the interactive help menu use the reactions:
         guild_db = ctx.bot.db("guilds").find(str(ctx.guild.id))
         if not guild_db:
             ctx.bot.db("guilds").insert(str(ctx.guild.id), ctx.bot.empty_guild)
+            guild_db = ctx.bot.db("guilds").find(str(ctx.guild.id))
         if not guild_db.get("prefix"):
             guild_db["prefix"] = ['.']
             ctx.bot.db("guilds").update(str(ctx.guild.id), guild_db)
@@ -234,6 +235,7 @@ To use the interactive help menu use the reactions:
         guild_db = ctx.bot.db("guilds").find(str(ctx.guild.id))
         if not guild_db:
             ctx.bot.db("guilds").insert(str(ctx.guild.id), ctx.bot.empty_guild)
+            guild_db = ctx.bot.db("guilds").find(str(ctx.guild.id))
         if not guild_db.get("prefix"):
             guild_db["prefix"] = ['.']
             ctx.bot.db("guilds").update(str(ctx.guild.id), guild_db)
