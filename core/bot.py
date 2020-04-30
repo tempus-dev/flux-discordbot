@@ -1,20 +1,21 @@
+import datetime
+import json
+import logging
 import re
 import sys
-import json
-import datetime
 import traceback
-import logging
 from enum import Enum
-from bson.json_util import dumps
-from recordclass import recordclass
 from functools import wraps
 
 import discord
 from discord.ext import commands
-from pymongo import MongoClient
 
-from handlers.reminders import ReminderService
+from bson.json_util import dumps
 from handlers.insights import Insights
+from handlers.reminders import ReminderService
+from pymongo import MongoClient
+from recordclass import recordclass
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -30,13 +31,28 @@ def _ensure_database(func: callable):
     return wrapper
 
 
-def parse_time(self, time_re: str) -> datetime.datetime:
+def parse_time(time_re: str) -> datetime.datetime:
+    """Parses a human-made relative time into a datetime.datetime object
+
+    Args:
+        time_re (str): The time the human has given.
+
+    Returns:
+        One singular datetime.datetime object.
+
+    Raises:
+        None.
+
+    """
     time_re = re.match(
         r"(?:(?P<weeks>\d+)w)?(?:\s+)?(?:(?P<days>\d+)d)?(?:\s+)?(?:(?P<hours>\d+)h)?(?:\s+)?(?:(?P<minutes>\d+)m)?(?:\s+)?(?:(?P<seconds>\d+)s)?", time_re)  # noqa: E501
+    
     time_re = time_re.groupdict()
+    
     for k, v in time_re.items():
         if not time_re[k]:
             time_re[k] = 0
+    
     for k, v in time_re.items():
         time_re[k] = int(v)
 
@@ -47,7 +63,9 @@ def parse_time(self, time_re: str) -> datetime.datetime:
         minutes=time_re.get("minutes"),
         seconds=time_re.get("seconds")
         )
+
     time_re = datetime.datetime.now() - time_re
+
     return time_re
 
 
