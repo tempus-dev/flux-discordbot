@@ -93,7 +93,7 @@ class ProjectHandler:
     def project_completion(self, project: str) -> int:
         """This returns how close a project is to completion, out of 100."""
         guild = flux.db("guilds").find(self.guild)
-        if (not guild) or (guild.get("projects")):
+        if not (guild and guild.get("projects")):
             return
         project = next((item for item in guild.get("projects")
                         if item["name"] == project), None)
@@ -111,7 +111,7 @@ class ProjectHandler:
     def project_progress_bar(self, project: str) -> int:
         """This returns how close a project is to completion, out of 100."""
         guild = flux.db("guilds").find(self.guild)
-        if (not guild) or (guild.get("projects")):
+        if not (guild and guild.get("projects")):
             return
         project = next((item for item in guild.get("projects")
                         if item["name"] == project), None)

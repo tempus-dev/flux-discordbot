@@ -1,5 +1,7 @@
+import re
 import sys
 import json
+import datetime
 import traceback
 import logging
 from enum import Enum
@@ -26,6 +28,27 @@ def _ensure_database(func: callable):
         return func(self, *args, **kwargs)
 
     return wrapper
+
+
+def parse_time(self, time_re: str) -> datetime.datetime:
+    time_re = re.match(
+        r"(?:(?P<weeks>\d+)w)?(?:\s+)?(?:(?P<days>\d+)d)?(?:\s+)?(?:(?P<hours>\d+)h)?(?:\s+)?(?:(?P<minutes>\d+)m)?(?:\s+)?(?:(?P<seconds>\d+)s)?", time_re)  # noqa: E501
+    time_re = time_re.groupdict()
+    for k, v in time_re.items():
+        if not time_re[k]:
+            time_re[k] = 0
+    for k, v in time_re.items():
+        time_re[k] = int(v)
+
+    time_re = datetime.timedelta(
+        weeks=time_re.get("weeks"),
+        days=time_re.get("days"),
+        hours=time_re.get("hours"),
+        minutes=time_re.get("minutes"),
+        seconds=time_re.get("seconds")
+        )
+    time_re = datetime.datetime.now() - time_re
+    return time_re
 
 
 class Mongo:
@@ -149,20 +172,19 @@ class Bot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._last_exception = None
-        self.db_client = None
         self.reminders = None
+        self.db_client = db_client
+        self.config = config
         self.helpc = HelpCommand()
         self.logger = logger
         self.flags = Flags
+        self.parse_time = parse_time
         self.empty_guild = {
             "projects": [],
             "points": {},
+            "prefix": [self.config.prefix],
             "project_category": None
         }
-        with open("./config.json", "r", encoding="utf8") as file:
-            data = json.dumps(json.load(file))
-            self.config = json.loads(data, object_hook=lambda d: recordclass(
-                "config", d.keys())(*d.values()))
 
     async def send_cmd_help(self, ctx) -> None:
         msg = f"""```{self.helpc.get_command_signature(ctx, ctx.command)}
@@ -211,7 +233,7 @@ class Bot(commands.Bot):
             try:
                 raise error
             except Exception:
-                uuid = await Insights(self).log_error(ctx, log)
+                uuid = await Insights(self).log_cmd_error(ctx, log)
                 if ctx.author.id in self.config.owners:
                     await ctx.send("DEBUG: This command silently errored. "
                                    f"ID: {uuid}")
@@ -224,44 +246,86 @@ class Bot(commands.Bot):
     def db(self, collection):
         return Mongo(self.db_client, collection)
 
-    def connect_to_mongo(self):
-        db_client = MongoClient(self.config.uri)[self.config.db]
-        try:
-            db_client.collection_names()
-        except Exception:
-            db_client = None
-            logger.warning(
-                "MongoDB connection failed. There will be no MongoDB support.")
-        return db_client
-
     async def on_ready(self):
         try:
             self.config.contact_channel = (await self.fetch_channel(
                 self.config.contact_channel_id))
         except discord.errors.NotFound:
             self.config.contact_channel = None
-        game = discord.Game(".help for help!")
+        game = discord.Game(f"{self.config.prefix}help for help!")
         await self.change_presence(status=discord.Status.idle, activity=game)
-        self.db_client = await self.loop.run_in_executor(
-            None, self.connect_to_mongo)
         self.reminders = ReminderService(self)
         defaults = ['handlers.insights', 'ui.developer', 'ui.general',
                     'ui.support', 'ui.projects', 'ui.tasks', ]
         extensions = defaults if self.db_client else ['handlers.insights',
                                                       'ui.developer',
-                                                      'ui.general', 'ui.cx']
+                                                      'ui.general',
+                                                      'ui.support']
         for i in extensions:
             try:
                 self.load_extension(i)
             except discord.ext.commands.errors.ExtensionAlreadyLoaded:
-                break
+                continue
+            except Exception as e:
+                log = f"Exception in extension {i}\n"
+                log += "".join(traceback.format_exception(type(e), e,
+                                                          e.__traceback__))
+                self._last_exception = log
+                uuid = await Insights(self).log_error(log)
+                print(f"An error occured while loading extension {i}:",
+                      file=sys.stderr)
+                logger.warning(f"Error ID: {uuid}")
+                traceback.print_exception(type(e), e, e.__traceback__,
+                                          file=sys.stderr)
         print("Ready.")
 
     async def on_resumed(self):
-        game = discord.Game(".help for help!")
+        game = discord.Game(f"{self.config.prefix}help for help!")
         await self.change_presence(status=discord.Status.idle, activity=game)
         print("Resumed.")
 
 
-flux = Bot(command_prefix=commands.when_mentioned_or(
-    '.'), help_command=None)
+# Connects to MongoDB
+
+with open("./config.json", "r", encoding="utf8") as file:
+    data = json.dumps(json.load(file))
+    config = json.loads(data, object_hook=lambda d: recordclass(
+        "config", d.keys())(*d.values()))
+
+
+db_client = MongoClient(config.uri)[config.db]
+try:
+    db_client.collection_names()
+except Exception:
+    db_client = None
+    logger.warning(
+        "MongoDB connection failed. There will be no MongoDB support.")
+
+
+def _prefix_callable(bot, msg):
+    base = [f'<@!{bot.user.id}> ', f'<@{bot.user.id}> ']
+
+    try:
+        db = Mongo(db_client, "guilds")
+        guild_db = db.find(str(msg.guild.id))
+        if not msg.guild:
+            base.append(config.prefix)
+        elif not guild_db:
+            base.append(config.prefix)
+        elif not guild_db.get("prefix"):
+            base.append(config.prefix)
+        else:
+            base.extend(guild_db.get("prefix"))
+    except Exception:
+        # TODO: Call insights exception here.
+        base.append(config.prefix)
+
+    return base
+
+
+flux = Bot(
+    db_client=db_client,
+    config=config,
+    command_prefix=_prefix_callable,
+    help_command=None
+)

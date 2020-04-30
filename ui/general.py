@@ -1,6 +1,4 @@
-import re
 import time
-import datetime
 
 import discord
 from discord.ext import commands
@@ -15,26 +13,6 @@ class General(commands.Cog, name="General"):
 
     def __init__(self):
         pass
-
-    def parse_time(self, time_re: str) -> datetime.datetime:
-        time_re = re.match(
-            r"(?:(?P<weeks>\d+)w)?(?:\s+)?(?:(?P<days>\d+)d)?(?:\s+)?(?:(?P<hours>\d+)h)?(?:\s+)?(?:(?P<minutes>\d+)m)?(?:\s+)?(?:(?P<seconds>\d+)s)?", time_re)
-        time_re = time_re.groupdict()
-        for k, v in time_re.items():
-            if not time_re[k]:
-                time_re[k] = 0
-        for k, v in time_re.items():
-            time_re[k] = int(v)
-
-        time_re = datetime.timedelta(
-            weeks=time_re.get("weeks"),
-            days=time_re.get("days"),
-            hours=time_re.get("hours"),
-            minutes=time_re.get("minutes"),
-            seconds=time_re.get("seconds")
-        )
-        time_re = datetime.datetime.now() - time_re
-        return time_re
 
     @commands.command()
     async def help(self, ctx) -> discord.Message:
@@ -118,7 +96,7 @@ To use the interactive help menu use the reactions:
                 ctx.commmand.clean_params['duration']
             )
         duration = " ".join(duration)
-        duration = self.parse_time(duration)
+        duration = ctx.bot.parse_time(duration)
         await ReminderService(ctx.bot).new_reminder(
             ctx.author.id, to_remind, duration)
         return await ctx.send("Reminder set!")
@@ -136,6 +114,10 @@ To use the interactive help menu use the reactions:
 
         if not user:
             user = ctx.author
+        if not ctx.bot.db("guilds").find(str(ctx.guild.id)):
+            await ctx.send("No one has any points.")
+            return
+
         points = ctx.bot.db("guilds").find(str(ctx.guild.id)).get("points")
 
         if not points:
@@ -165,6 +147,9 @@ To use the interactive help menu use the reactions:
                            )
             return
         leaderboardhandler = Leaderboard()
+        if not ctx.bot.db("guilds").find(str(ctx.guild.id)):
+            await ctx.send("No one has any points.")
+            return
         points = ctx.bot.db("guilds").find(str(ctx.guild.id)).get("points")
         if not points:
             ctx.bot.db("guilds").update(str(ctx.guild.id), {"points": {}})
@@ -177,6 +162,96 @@ To use the interactive help menu use the reactions:
             return await ctx.send("No one has any points.  o.o")
 
         await leaderboardhandler.create(ctx, users, sort_by="points")
+
+    @commands.group()
+    async def prefix(self, ctx) -> None:
+        """This command gets the prefix."""
+        if ctx.invoked_subcommand:
+            return
+        if not ctx.guild:
+            text = f"{ctx.bot.user.name}'s prefix is"
+            text = text + f" `{ctx.bot.config.prefix}`"
+            embed = discord.Embed(
+                description=text
+            )
+            await ctx.send(embed=embed)
+            return
+        embed = discord.Embed(color=ctx.author.color)
+        embed.set_footer(
+            text="You can also mention the bot as a prefix anywhere."
+        )
+        if not ctx.bot.db("guilds").find(str(ctx.guild.id)):
+            text = f"{ctx.bot.user.name}'s "
+            text = text + f"prefix is `{ctx.bot.config.prefix}`"
+            embed.description = text
+
+            await ctx.send(embed=embed)
+            return
+
+        prefixes = ctx.bot.db("guilds").find(str(ctx.guild.id)).get('prefix')
+        if not prefixes:
+            prefixes = ['.']
+        _len = len(prefixes)
+        name = f"{ctx.guild.name}'s" if \
+            ctx.guild.name[-1:] != "s" else \
+            f"{ctx.guild.name}'"
+        if _len == 1:
+            text = f"{name} prefix for "
+            text = text + f"{ctx.bot.user.name} is `{prefixes[0]}`"
+        elif _len == 2:
+            text = f"{name} prefixes for {ctx.bot.user.name} are"
+            text = text + f" `{prefixes[0]}` and `{prefixes[1]}`"
+        elif _len > 2:
+            last = prefixes[_len - 1]
+            prefixes = prefixes.pop((_len - 1))
+            text = f"{name} prefixes for {ctx.bot.user.name} are "
+            text = text + f"`{'`, '.join(x for x in prefixes)} and `{last}`"
+
+        embed.description = text
+        await ctx.send(embed=embed)
+
+    @prefix.command(name="set")
+    async def _set(self, ctx, *, prefix) -> None:
+        """This sets a prefix."""
+        if not ctx.guild:
+            return
+        guild_db = ctx.bot.db("guilds").find(str(ctx.guild.id))
+        if not guild_db:
+            ctx.bot.db("guilds").insert(str(ctx.guild.id), ctx.bot.empty_guild)
+        if not guild_db.get("prefix"):
+            guild_db["prefix"] = ['.']
+            ctx.bot.db("guilds").update(str(ctx.guild.id), guild_db)
+
+        guild_db["prefix"].extend(prefix.split(" "))
+        ctx.bot.db("guilds").update(str(ctx.guild.id), guild_db)
+        await ctx.send("Alright! Your prefix settings have been updated.")
+
+    @prefix.command(name="del", aliases=['delete'])
+    async def _del(self, ctx, *, prefix) -> None:
+        """This deletes a prefix."""
+        if not ctx.guild:
+            return
+        guild_db = ctx.bot.db("guilds").find(str(ctx.guild.id))
+        if not guild_db:
+            ctx.bot.db("guilds").insert(str(ctx.guild.id), ctx.bot.empty_guild)
+        if not guild_db.get("prefix"):
+            guild_db["prefix"] = ['.']
+            ctx.bot.db("guilds").update(str(ctx.guild.id), guild_db)
+
+        [guild_db["prefix"].remove(x) for x in prefix.split(" ")]
+        ctx.bot.db("guilds").update(str(ctx.guild.id), guild_db)
+        await ctx.send("Alright! Your prefix settings have been updated.")
+
+    @commands.command()
+    async def invite(self, ctx) -> None:
+        """Gets the bot invite."""
+        embed = discord.Embed()
+        uid = ctx.bot.user.id
+        inv = f"http://discordapp.com/api/oauth2/authorize?client_id={uid}"
+        inv = inv + "&scope=bot&permission=388176"
+        desc = "Thanks for choosing Flux!"
+        embed.description = desc + f" My invite is [here!]({inv})"
+        await ctx.send(embed=embed)
 
 
 def setup(bot):
