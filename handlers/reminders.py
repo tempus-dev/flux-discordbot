@@ -42,7 +42,9 @@ class ReminderService:
     async def _set_reminder(self, reminder):
         async def remind(bot, reminder):
             author = (await bot.fetch_user(reminder.author_id))
-            await author.send(reminder.message)
+            text = "You asked me to remind you about: "
+            text += f"```{reminder.message}```"
+            await author.send(text)
             self.bot.db("reminders").delete(reminder.id)
 
         Scheduler(reminder.time, remind(self.bot, reminder))
