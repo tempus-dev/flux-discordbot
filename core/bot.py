@@ -196,13 +196,15 @@ class Bot(commands.Bot):
         self.helpc = HelpCommand()
         self.logger = logger
         self.flags = Flags
-        self.parse_time = parse_time
         self.empty_guild = {
             "projects": [],
             "points": {},
             "prefix": [self.config.prefix],
             "project_category": None
         }
+
+    def parse_time(self, time_re) -> datetime.datetime:
+        return parse_time(time_re)
 
     async def send_cmd_help(self, ctx) -> None:
         msg = f"""```{self.helpc.get_command_signature(ctx, ctx.command)}
