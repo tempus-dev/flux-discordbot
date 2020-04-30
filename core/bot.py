@@ -1,5 +1,7 @@
+import re
 import sys
 import json
+import datetime
 import traceback
 import logging
 from enum import Enum
@@ -26,6 +28,27 @@ def _ensure_database(func: callable):
         return func(self, *args, **kwargs)
 
     return wrapper
+
+
+def parse_time(self, time_re: str) -> datetime.datetime:
+    time_re = re.match(
+        r"(?:(?P<weeks>\d+)w)?(?:\s+)?(?:(?P<days>\d+)d)?(?:\s+)?(?:(?P<hours>\d+)h)?(?:\s+)?(?:(?P<minutes>\d+)m)?(?:\s+)?(?:(?P<seconds>\d+)s)?", time_re)  # noqa: E501
+    time_re = time_re.groupdict()
+    for k, v in time_re.items():
+        if not time_re[k]:
+            time_re[k] = 0
+    for k, v in time_re.items():
+        time_re[k] = int(v)
+
+    time_re = datetime.timedelta(
+        weeks=time_re.get("weeks"),
+        days=time_re.get("days"),
+        hours=time_re.get("hours"),
+        minutes=time_re.get("minutes"),
+        seconds=time_re.get("seconds")
+        )
+    time_re = datetime.datetime.now() - time_re
+    return time_re
 
 
 class Mongo:
@@ -155,6 +178,7 @@ class Bot(commands.Bot):
         self.helpc = HelpCommand()
         self.logger = logger
         self.flags = Flags
+        self.parse_time = parse_time
         self.empty_guild = {
             "projects": [],
             "points": {},

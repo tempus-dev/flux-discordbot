@@ -1,4 +1,3 @@
-import re
 import datetime
 
 import discord
@@ -16,26 +15,6 @@ class Tasks(commands.Cog, name="Tasks"):
     def __init__(self, bot):
         self.bot = bot
 
-    def parse_time(self, time_re: str) -> datetime.datetime:
-        time_re = re.match(
-            r"(?:(?P<weeks>\d+)w)?(?:\s+)?(?:(?P<days>\d+)d)?(?:\s+)?(?:(?P<hours>\d+)h)?(?:\s+)?(?:(?P<minutes>\d+)m)?(?:\s+)?(?:(?P<seconds>\d+)s)?", time_re)  # noqa: E501
-        time_re = time_re.groupdict()
-        for k, v in time_re.items():
-            if not time_re[k]:
-                time_re[k] = 0
-        for k, v in time_re.items():
-            time_re[k] = int(v)
-
-        time_re = datetime.timedelta(
-            weeks=time_re.get("weeks"),
-            days=time_re.get("days"),
-            hours=time_re.get("hours"),
-            minutes=time_re.get("minutes"),
-            seconds=time_re.get("seconds")
-        )
-        time_re = datetime.datetime.now() - time_re
-        return time_re
-
     @commands.group(hidden=True)
     async def tasks(self, ctx) -> None:
         """Task related commands."""
@@ -52,7 +31,7 @@ class Tasks(commands.Cog, name="Tasks"):
             await ctx.send("You can't create tasks on this project.")
             return
         due = "".join(due)
-        due = self.parse_time(due)
+        due = ctx.bot.parse_time(due)
         task = ctx.projects.create_task(project, name, reward, due)
         total_seconds = (datetime.datetime.now() - due).seconds
 

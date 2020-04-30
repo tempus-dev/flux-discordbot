@@ -1,6 +1,4 @@
-import re
 import time
-import datetime
 
 import discord
 from discord.ext import commands
@@ -15,27 +13,6 @@ class General(commands.Cog, name="General"):
 
     def __init__(self):
         pass
-
-    def parse_time(self, time_re: str) -> datetime.datetime:
-        time_re = re.match(
-            # TODO Get rid of the duplicate instance of this regex in tasks.py
-            r"(?:(?P<weeks>\d+)w)?(?:\s+)?(?:(?P<days>\d+)d)?(?:\s+)?(?:(?P<hours>\d+)h)?(?:\s+)?(?:(?P<minutes>\d+)m)?(?:\s+)?(?:(?P<seconds>\d+)s)?", time_re)  # noqa: E501
-        time_re = time_re.groupdict()
-        for k, v in time_re.items():
-            if not time_re[k]:
-                time_re[k] = 0
-        for k, v in time_re.items():
-            time_re[k] = int(v)
-
-        time_re = datetime.timedelta(
-            weeks=time_re.get("weeks"),
-            days=time_re.get("days"),
-            hours=time_re.get("hours"),
-            minutes=time_re.get("minutes"),
-            seconds=time_re.get("seconds")
-        )
-        time_re = datetime.datetime.now() - time_re
-        return time_re
 
     @commands.command()
     async def help(self, ctx) -> discord.Message:
@@ -119,7 +96,7 @@ To use the interactive help menu use the reactions:
                 ctx.commmand.clean_params['duration']
             )
         duration = " ".join(duration)
-        duration = self.parse_time(duration)
+        duration = ctx.bot.parse_time(duration)
         await ReminderService(ctx.bot).new_reminder(
             ctx.author.id, to_remind, duration)
         return await ctx.send("Reminder set!")
@@ -275,7 +252,6 @@ To use the interactive help menu use the reactions:
         desc = "Thanks for choosing Flux!"
         embed.description = desc + f" My invite is [here!]({inv})"
         await ctx.send(embed=embed)
-
 
 
 def setup(bot):
