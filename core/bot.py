@@ -46,13 +46,13 @@ def parse_time(time_re: str) -> datetime.datetime:
     """
     time_re = re.match(
         r"(?:(?P<weeks>\d+)w)?(?:\s+)?(?:(?P<days>\d+)d)?(?:\s+)?(?:(?P<hours>\d+)h)?(?:\s+)?(?:(?P<minutes>\d+)m)?(?:\s+)?(?:(?P<seconds>\d+)s)?", time_re)  # noqa: E501
-    
+
     time_re = time_re.groupdict()
-    
+
     for k, v in time_re.items():
         if not time_re[k]:
             time_re[k] = 0
-    
+
     for k, v in time_re.items():
         time_re[k] = int(v)
 
