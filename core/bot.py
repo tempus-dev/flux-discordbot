@@ -149,20 +149,18 @@ class Bot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._last_exception = None
-        self.db_client = None
         self.reminders = None
+        self.db_client = db_client
+        self.config = config
         self.helpc = HelpCommand()
         self.logger = logger
         self.flags = Flags
         self.empty_guild = {
             "projects": [],
             "points": {},
+            "prefix": [self.config.prefix],
             "project_category": None
         }
-        with open("./config.json", "r", encoding="utf8") as file:
-            data = json.dumps(json.load(file))
-            self.config = json.loads(data, object_hook=lambda d: recordclass(
-                "config", d.keys())(*d.values()))
 
     async def send_cmd_help(self, ctx) -> None:
         msg = f"""```{self.helpc.get_command_signature(ctx, ctx.command)}
@@ -224,28 +222,14 @@ class Bot(commands.Bot):
     def db(self, collection):
         return Mongo(self.db_client, collection)
 
-    def connect_to_mongo(self):
-        db_client = MongoClient(self.config.uri)[self.config.db]
-        try:
-            db_client.collection_names()
-        except Exception as e:
-            traceback.print_exception(type(e), e, e.__traceback__,
-                                      file=sys.stderr)
-            db_client = None
-            logger.warning(
-                "MongoDB connection failed. There will be no MongoDB support.")
-        return db_client
-
     async def on_ready(self):
         try:
             self.config.contact_channel = (await self.fetch_channel(
                 self.config.contact_channel_id))
         except discord.errors.NotFound:
             self.config.contact_channel = None
-        game = discord.Game(".help for help!")
+        game = discord.Game(f"{self.config.prefix}help for help!")
         await self.change_presence(status=discord.Status.idle, activity=game)
-        self.db_client = await self.loop.run_in_executor(
-            None, self.connect_to_mongo)
         self.reminders = ReminderService(self)
         defaults = ['handlers.insights', 'ui.developer', 'ui.general',
                     'ui.support', 'ui.projects', 'ui.tasks', ]
@@ -272,10 +256,52 @@ class Bot(commands.Bot):
         print("Ready.")
 
     async def on_resumed(self):
-        game = discord.Game(".help for help!")
+        game = discord.Game(f"{self.config.prefix}help for help!")
         await self.change_presence(status=discord.Status.idle, activity=game)
         print("Resumed.")
 
 
-flux = Bot(command_prefix=commands.when_mentioned_or(
-    '.'), help_command=None)
+# Connects to MongoDB
+
+with open("./config.json", "r", encoding="utf8") as file:
+    data = json.dumps(json.load(file))
+    config = json.loads(data, object_hook=lambda d: recordclass(
+        "config", d.keys())(*d.values()))
+
+
+db_client = MongoClient(config.uri)[config.db]
+try:
+    db_client.collection_names()
+except Exception:
+    db_client = None
+    logger.warning(
+        "MongoDB connection failed. There will be no MongoDB support.")
+
+
+def _prefix_callable(bot, msg):
+    base = [f'<@!{bot.user.id}> ', f'<@{bot.user.id}> ']
+
+    try:
+        db = Mongo(db_client, "guilds")
+        guild_db = db.find(str(msg.guild.id))
+        if not msg.guild:
+            base.append(config.prefix)
+        elif not guild_db:
+            base.append(config.prefix)
+        elif not guild_db.get("prefix"):
+            base.append(config.prefix)
+        else:
+            base.extend(guild_db.get("prefix"))
+    except Exception:
+        # TODO: Call insights exception here.
+        base.append(config.prefix)
+
+    return base
+
+
+flux = Bot(
+    db_client=db_client,
+    config=config,
+    command_prefix=_prefix_callable,
+    help_command=None
+)

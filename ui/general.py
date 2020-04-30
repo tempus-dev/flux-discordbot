@@ -186,6 +186,97 @@ To use the interactive help menu use the reactions:
 
         await leaderboardhandler.create(ctx, users, sort_by="points")
 
+    @commands.group()
+    async def prefix(self, ctx) -> None:
+        """This command gets the prefix."""
+        if ctx.invoked_subcommand:
+            return
+        if not ctx.guild:
+            text = f"{ctx.bot.user.name}'s prefix is"
+            text = text + f" `{ctx.bot.config.prefix}`"
+            embed = discord.Embed(
+                description=text
+            )
+            await ctx.send(embed=embed)
+            return
+        embed = discord.Embed(color=ctx.author.color)
+        embed.set_footer(
+            text="You can also mention the bot as a prefix anywhere."
+        )
+        if not ctx.bot.db("guilds").find(str(ctx.guild.id)):
+            text = f"{ctx.bot.user.name}'s "
+            text = text + f"prefix is `{ctx.bot.config.prefix}`"
+            embed.description = text
+
+            await ctx.send(embed=embed)
+            return
+
+        prefixes = ctx.bot.db("guilds").find(str(ctx.guild.id)).get('prefix')
+        if not prefixes:
+            prefixes = ['.']
+        _len = len(prefixes)
+        name = f"{ctx.guild.name}'s" if \
+            ctx.guild.name[-1:] != "s" else \
+            f"{ctx.guild.name}'"
+        if _len == 1:
+            text = f"{name} prefix for "
+            text = text + f"{ctx.bot.user.name} is `{prefixes[0]}`"
+        elif _len == 2:
+            text = f"{name} prefixes for {ctx.bot.user.name} are"
+            text = text + f" `{prefixes[0]}` and `{prefixes[1]}`"
+        elif _len > 2:
+            last = prefixes[_len - 1]
+            prefixes = prefixes.pop((_len - 1))
+            text = f"{name} prefixes for {ctx.bot.user.name} are "
+            text = text + f"`{'`, '.join(x for x in prefixes)} and `{last}`"
+
+        embed.description = text
+        await ctx.send(embed=embed)
+
+    @prefix.command(name="set")
+    async def _set(self, ctx, *, prefix) -> None:
+        """This sets a prefix."""
+        if not ctx.guild:
+            return
+        guild_db = ctx.bot.db("guilds").find(str(ctx.guild.id))
+        if not guild_db:
+            ctx.bot.db("guilds").insert(str(ctx.guild.id), ctx.bot.empty_guild)
+        if not guild_db.get("prefix"):
+            guild_db["prefix"] = ['.']
+            ctx.bot.db("guilds").update(str(ctx.guild.id), guild_db)
+
+        guild_db["prefix"].extend(prefix.split(" "))
+        ctx.bot.db("guilds").update(str(ctx.guild.id), guild_db)
+        await ctx.send("Alright! Your prefix settings have been updated.")
+
+    @prefix.command(name="del", aliases=['delete'])
+    async def _del(self, ctx, *, prefix) -> None:
+        """This deletes a prefix."""
+        if not ctx.guild:
+            return
+        guild_db = ctx.bot.db("guilds").find(str(ctx.guild.id))
+        if not guild_db:
+            ctx.bot.db("guilds").insert(str(ctx.guild.id), ctx.bot.empty_guild)
+        if not guild_db.get("prefix"):
+            guild_db["prefix"] = ['.']
+            ctx.bot.db("guilds").update(str(ctx.guild.id), guild_db)
+
+        [guild_db["prefix"].remove(x) for x in prefix.split(" ")]
+        ctx.bot.db("guilds").update(str(ctx.guild.id), guild_db)
+        await ctx.send("Alright! Your prefix settings have been updated.")
+
+    @commands.command()
+    async def invite(self, ctx) -> None:
+        """Gets the bot invite."""
+        embed = discord.Embed()
+        uid = ctx.bot.user.id
+        inv = f"http://discordapp.com/api/oauth2/authorize?client_id={uid}"
+        inv = inv + "&scope=bot&permission=388176"
+        desc = "Thanks for choosing Flux!"
+        embed.description = desc + f" My invite is [here!]({inv})"
+        await ctx.send(embed=embed)
+
+
 
 def setup(bot):
     bot.add_cog(General())
