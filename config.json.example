@@ -2,6 +2,7 @@
     "token": "your-token-here",
     "uri": "localhost",
     "db": "flux",
+    "prefix": ".",
     "contact_channel": null,
     "contact_channel_id": your-channel-id-here,
     "server_logs": your-server-logs-id-here,
