@@ -39,32 +39,32 @@ To use the interactive help menu use the reactions:
 
         for cog in ctx.bot.cogs:
             cog = ctx.bot.cogs[cog]
-            if cog.qualified_name not in blacklisted_cogs:
-                if cog.get_commands:
-                    embed = discord.Embed(color=ctx.author.color)
-                    embed.set_author(name=cog.qualified_name,
-                                     icon_url=ctx.bot.user.avatar_url)
-                    commands = list(cog.walk_commands())
-                    embed.add_field(name="Commands:",
-                                    value=":stop_button: To stop at any time.")
-                    for command in commands:
-                        if isinstance(command, discord.ext.commands.Group):
-                            continue
-                        if command.parent:
-                            params = command.clean_params
-                            params = "<" + ">, <".join(params) + ">"
-                            embed.add_field(
-                                name=f"**{ctx.prefix}{command.parent}"
-                                f" {command.name}** {params}",
-                                value=command.help, inline=False)
-                        else:
-                            params = command.clean_params
-                            params = "<" + ">, <".join(params) + ">"
-                            if params == "<>":
-                                params = ""
-                            embed.add_field(
-                                name=f"**{prefix}{command.name}** {params}",
-                                value=command.help, inline=False)
+            if cog.qualified_name in blacklisted_cogs or not cog.get_commands:
+                return
+            embed = discord.Embed(color=ctx.author.color)
+            embed.set_author(name=cog.qualified_name,
+                             icon_url=ctx.bot.user.avatar_url)
+            commands = list(cog.walk_commands())
+            embed.add_field(name="Commands:",
+                            value=":stop_button: To stop at any time.")
+            for command in commands:
+                if isinstance(command, discord.ext.commands.Group):
+                    continue
+                if command.parent:
+                    params = command.clean_params
+                    params = "<" + ">, <".join(params) + ">"
+                    embed.add_field(
+                        name=f"**{ctx.prefix}{command.parent}"
+                        f" {command.name}** {params}",
+                        value=command.help, inline=False)
+                else:
+                    params = command.clean_params
+                    params = "<" + ">, <".join(params) + ">"
+                    if params == "<>":
+                        params = ""
+                    embed.add_field(
+                        name=f"**{prefix}{command.name}** {params}",
+                        value=command.help, inline=False)
 
                     embeds.append(embed)
         p = BotEmbedPaginator(ctx, embeds)
