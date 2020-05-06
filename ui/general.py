@@ -40,7 +40,7 @@ To use the interactive help menu use the reactions:
         for cog in ctx.bot.cogs:
             cog = ctx.bot.cogs[cog]
             if cog.qualified_name in blacklisted_cogs or not cog.get_commands:
-                pass
+                continue
             embed = discord.Embed(color=ctx.author.color)
             embed.set_author(name=cog.qualified_name, icon_url=ctx.bot.user.avatar_url)
             commands = list(cog.walk_commands())
