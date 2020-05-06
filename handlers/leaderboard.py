@@ -16,7 +16,8 @@ class Leaderboard:
             to_sort=to_sort,
             title="Leaderboard",
             icon_url=ctx.guild.icon_url,
-            color=ctx.author.color)
+            color=ctx.author.color,
+        )
 
         paginator = BotEmbedPaginator(ctx, embeds)
         await msg.delete()
@@ -28,14 +29,13 @@ class Leaderboard:
             extracted[user] = users[user][extract_by]
         return extracted
 
-    async def create_embeds(self, ctx, sorted_users, to_sort, title,
-                            icon_url, color):
+    async def create_embeds(self, ctx, sorted_users, to_sort, title, icon_url, color):
         embeds = []
         start = 0
         end = 10
         n = 1
 
-        for i in range(round(len(sorted_users)/10)+1):
+        for i in range(round(len(sorted_users) / 10) + 1):
             embed = discord.Embed(color=color)
             embed.set_author(name=title, icon_url=icon_url)
             for user in sorted_users[start:end]:
