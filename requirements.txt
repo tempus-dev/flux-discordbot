@@ -1,5 +1,5 @@
 discord.py
 pymongo
 gitpython
-disputils
+git+https://github.com/tempus-dev/disputils@master
 recordclass
