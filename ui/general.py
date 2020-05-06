@@ -43,7 +43,7 @@ To use the interactive help menu use the reactions:
                 return
             embed = discord.Embed(color=ctx.author.color)
             embed.set_author(name=cog.qualified_name,
-                                icon_url=ctx.bot.user.avatar_url)
+                             icon_url=ctx.bot.user.avatar_url)
             commands = list(cog.walk_commands())
             embed.add_field(name="Commands:",
                             value=":stop_button: To stop at any time.")
