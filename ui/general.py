@@ -210,9 +210,12 @@ To use the interactive help menu use the reactions:
         embed.description = text
         await ctx.send(embed=embed)
 
+    @commands.has_permissions(manage_messages=True)
     @prefix.command(name="set")
     async def _set(self, ctx, *, prefix) -> None:
-        """This sets a prefix."""
+        """This sets a prefix.
+
+        You must have manage messages to use this command."""
         if not ctx.guild:
             return
         guild_db = ctx.bot.db("guilds").find(str(ctx.guild.id))
@@ -227,9 +230,12 @@ To use the interactive help menu use the reactions:
         ctx.bot.db("guilds").update(str(ctx.guild.id), guild_db)
         await ctx.send("Alright! Your prefix settings have been updated.")
 
+    @commands.has_permissions(manage_messages=True)
     @prefix.command(name="del", aliases=['delete'])
     async def _del(self, ctx, *, prefix) -> None:
-        """This deletes a prefix."""
+        """This deletes a prefix.
+
+        You must have manage messages to use this command."""
         if not ctx.guild:
             return
         guild_db = ctx.bot.db("guilds").find(str(ctx.guild.id))
@@ -249,7 +255,7 @@ To use the interactive help menu use the reactions:
         """Gets the bot invite."""
         embed = discord.Embed()
         uid = ctx.bot.user.id
-        inv = f"http://discordapp.com/api/oauth2/authorize?client_id={uid}"
+        inv = f"http://discord.com/api/oauth2/authorize?client_id={uid}"
         inv = inv + "&scope=bot&permission=388176"
         desc = "Thanks for choosing Flux!"
         embed.description = desc + f" My invite is [here!]({inv})"
