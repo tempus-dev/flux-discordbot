@@ -1,20 +1,21 @@
-import __main__
+import sys
 import os
-import datetime
+import typing as t
 
 
-def path(*objects):
-    """
-    Returns path relative to caller file location with additional objects
-    """
-    newPath = ((__main__.__file__).split(os.sep))[:-1]
-    for i in objects:
-        newPath.append(i)
-    return (os.sep).join(str(y) for y in newPath)
+def path(*filepath: t.Iterable) -> str:
+    """Returns absolute path from main caller file to another location.
 
+    Args:
+        filepath (:obj:`t.Iterable`): Items to add to the curent filepath.
 
-def now():
+    Returns:
+        String of relative filepath with OS based seperator.
+
+    Examples:
+        >>> print(path('tmp', 'image.png'))
+        C:\\Users\\Xithr\\Pictures\\image.png
+
     """
-    Returns the time depending on time zone (will look at file soon)
-    """
-    return datetime.datetime.now() + datetime.timedelta(hours=7)
+    absolute = os.path.abspath(os.path.dirname(sys.argv[0]))
+    return (os.sep).join(map(str, [absolute] + list(filepath)))
