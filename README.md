@@ -35,6 +35,6 @@ git clone https://github.com/tempus-dev/flux-discordbot
 cd flux-discordbot
 python3 -m pip install -r requirements.txt
 python3 -m pip install -r requirements-dev.txt # Optional, install dev dependencies
-cp config.json.example config.json # make sure to edit config.json
+cp config.example.json config.json # make sure to edit config.json
 python3 main.py
 ```
