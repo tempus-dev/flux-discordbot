@@ -1,8 +1,4 @@
-<h1 align="center">
-  <br>
-  <a href="https://github.com/Priultimus/flux-discordbot"><img src="https://cdn.discordapp.com/attachments/552561760566116382/592807212485836811/hack_wump_ship.png" alt="Flux"></a>
-   Our Hack Week Project! </br>
-</h1>
+
 
 
 # Flux
