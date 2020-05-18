@@ -221,6 +221,9 @@ class Pages:
                 for first_completed in completed:
                     react, user = first_completed.result()
                     break
+                for fut in pending:
+                    if not fut.cancelled():
+                        fut.cancel()
             except asyncio.TimeoutError:
                 self.paginating = False
                 try:
