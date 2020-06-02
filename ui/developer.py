@@ -21,8 +21,7 @@ class Developer(commands.Cog, name="Developer"):
     async def cog_check(self, ctx):
         return ctx.author.id in ctx.bot.config.owners
 
-    def pagify(self, text, delims=["\n"], *, escape=True, shorten_by=8,
-               page_len=1000):
+    def pagify(self, text, delims=["\n"], *, escape=True, shorten_by=8, page_len=1000):
         """DOES NOT RESPECT MARKDOWN BOXES OR INLINE CODE"""
         in_text = text
         if escape:
@@ -30,8 +29,7 @@ class Developer(commands.Cog, name="Developer"):
             shorten_by += num_mentions
         page_len -= shorten_by
         while len(in_text) > page_len:
-            closest_delim = max([in_text.rfind(d, 0, page_len)
-                                 for d in delims])
+            closest_delim = max([in_text.rfind(d, 0, page_len) for d in delims])
             closest_delim = closest_delim if closest_delim != -1 else page_len
             if escape:
                 to_send = self.escape_mass_mentions(in_text[:closest_delim])
@@ -54,10 +52,12 @@ class Developer(commands.Cog, name="Developer"):
             text = text.replace("@everyone", "@\u200beveryone")
             text = text.replace("@here", "@\u200bhere")
         if formatting:
-            text = (text.replace("`", "\\`")
-                        .replace("*", "\\*")
-                        .replace("_", "\\_")
-                        .replace("~", "\\~"))
+            text = (
+                text.replace("`", "\\`")
+                .replace("*", "\\*")
+                .replace("_", "\\_")
+                .replace("~", "\\~")
+            )
         return text
 
     def escape_mass_mentions(self, text):
@@ -66,15 +66,15 @@ class Developer(commands.Cog, name="Developer"):
     def cleanup_code(self, content):
         """Automatically removes code blocks from the code."""
         # remove ```py\n```
-        if content.startswith('```') and content.endswith('```'):
-            return '\n'.join(content.split('\n')[1:-1])
+        if content.startswith("```") and content.endswith("```"):
+            return "\n".join(content.split("\n")[1:-1])
 
         # remove `foo`
-        return content.strip('` \n')
+        return content.strip("` \n")
 
     def get_syntax_error(self, e):
         if not e.text:
-            return f'```py\n{e.__class__.__name__}: {e}\n```'
+            return f"```py\n{e.__class__.__name__}: {e}\n```"
         return f"""```py\n{e.text}{"^":>{e.offset}}\n{e.__class__.__name__}:
         {e}```"""
 
@@ -87,23 +87,23 @@ class Developer(commands.Cog, name="Developer"):
         e.add_field(name="Status:", value=g.pull())
         await ctx.send(embed=e)
 
-    @commands.command(name='eval')
+    @commands.command(name="eval")
     async def _eval(self, ctx, *, body: str) -> discord.Message:
         """Evaluates code"""
         pagify = self.pagify
         box = self.box
 
         env = {
-            'bot': ctx.bot,
-            'flux': ctx.bot,
-            'ctx': ctx,
-            'channel': ctx.channel,
-            'author': ctx.author,
-            'guild': ctx.guild,
-            'message': ctx.message,
-            'discord': discord,
-            'os': os,
-            '_': self._last_result
+            "bot": ctx.bot,
+            "flux": ctx.bot,
+            "ctx": ctx,
+            "channel": ctx.channel,
+            "author": ctx.author,
+            "guild": ctx.guild,
+            "message": ctx.message,
+            "discord": discord,
+            "os": os,
+            "_": self._last_result,
         }
 
         env.update(globals())
@@ -120,7 +120,7 @@ class Developer(commands.Cog, name="Developer"):
                 await ctx.send(box(page, lang="py"))
                 return
 
-        func = env['func']
+        func = env["func"]
         try:
             with redirect_stdout(stdout):
                 ret = await func()
@@ -131,7 +131,7 @@ class Developer(commands.Cog, name="Developer"):
         else:
             value = stdout.getvalue()
             try:
-                await ctx.message.add_reaction('\u2705')
+                await ctx.message.add_reaction("\u2705")
             except Exception:
                 pass
 
@@ -153,17 +153,16 @@ class Developer(commands.Cog, name="Developer"):
         except ModuleNotFoundError:
             return await ctx.send("Couldn't find that module!")
         except Exception as e:
-            error = ("Exception in loading module '{}'\n"
-                     "".format(module))
-            error += "".join(traceback.format_exception(type(e), e,
-                                                        e.__traceback__))
+            error = "Exception in loading module '{}'\n" "".format(module)
+            error += "".join(traceback.format_exception(type(e), e, e.__traceback__))
             try:
                 await ctx.author.send(error)
             except discord.errors.Forbidden:
                 return await ctx.send("Couldn't load that module!")
 
-            return await ctx.send("Couldn't load that module! "
-                                  "Sent you the error in DMs.")
+            return await ctx.send(
+                "Couldn't load that module! " "Sent you the error in DMs."
+            )
 
     @commands.command()
     async def unload(self, ctx, module: str) -> discord.Message:
@@ -171,8 +170,7 @@ class Developer(commands.Cog, name="Developer"):
         try:
             ctx.bot.unload_extension(module)
         except commands.errors.ExtensionNotLoaded:
-            return await ctx.send(
-                "That module either isn't loaded or doesn't exist.")
+            return await ctx.send("That module either isn't loaded or doesn't exist.")
         return await ctx.send(f"Unloaded `{module}`!")
 
     @commands.command()
@@ -186,18 +184,18 @@ class Developer(commands.Cog, name="Developer"):
             return await ctx.send("Couldn't find that module.")
         except commands.errors.ExtensionNotLoaded:
             return await ctx.send(
-                "That module either doesn't exist or was never loaded.")
+                "That module either doesn't exist or was never loaded."
+            )
         except Exception as e:
-            error = ("Exception in loading module '{}'\n"
-                     "".format(module))
-            error += "".join(traceback.format_exception(type(e), e,
-                                                        e.__traceback__))
+            error = "Exception in loading module '{}'\n" "".format(module)
+            error += "".join(traceback.format_exception(type(e), e, e.__traceback__))
             try:
                 await ctx.author.send(error)
             except discord.errors.Forbidden:
                 return await ctx.send("Couldn't load that module!")
-            return await ctx.send("Couldn't load that module! "
-                                  "Sent you the error in DMs.")
+            return await ctx.send(
+                "Couldn't load that module! " "Sent you the error in DMs."
+            )
 
     @commands.command()
     async def schedule(self, ctx, duration: int) -> None:
@@ -211,7 +209,8 @@ class Developer(commands.Cog, name="Developer"):
     async def user_flags(self, ctx, user_id: int) -> discord.Message:
         """Grabs the badges of a user."""
         user = await ctx.bot.http.request(
-            discord.http.Route("GET", f"/users/{user_id}"))
+            discord.http.Route("GET", f"/users/{user_id}")
+        )
         public_flags = user["public_flags"]
         flags = []
         for flag in ctx.bot.flags:
@@ -224,11 +223,13 @@ class Developer(commands.Cog, name="Developer"):
     @commands.command()
     async def respond(self, ctx, user_id: int, *message) -> discord.Message:
         """Responds to a request from any given user."""
-        user = (await ctx.bot.fetch_user(user_id))
+        user = await ctx.bot.fetch_user(user_id)
         message = " ".join(message)
         try:
-            await user.send(f"You've received a response from the developers!"
-                            f"\n```\n{message}\n```")
+            await user.send(
+                f"You've received a response from the developers!"
+                f"\n```\n{message}\n```"
+            )
             await ctx.send("Sent.")
         except Exception as e:
             await ctx.send(f"Message send failure. `{e}`")

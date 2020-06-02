@@ -13,26 +13,26 @@ class Reminder:
 
     def serialize(self):
         return {
-            'id': self.id,
-            'author_id': self.author_id,
-            'message': self.message,
-            'time': self.time
+            "id": self.id,
+            "author_id": self.author_id,
+            "message": self.message,
+            "time": self.time,
         }
 
     def __repr__(self):
-        return (f"<Reminder id={self.id} author_id={self.author_id}"
-                f" message={self.message} time={self.time}>")
+        return (
+            f"<Reminder id={self.id} author_id={self.author_id}"
+            f" message={self.message} time={self.time}>"
+        )
 
 
 class ReminderService:
     def __init__(self, bot):
         self.bot = bot
 
-    async def new_reminder(self, author_id: int,
-                           message: str, time: datetime):
+    async def new_reminder(self, author_id: int, message: str, time: datetime):
         total_seconds = (datetime.now() - time).seconds
-        reminder = Reminder(str(uuid4()), str(
-            author_id), message, total_seconds)
+        reminder = Reminder(str(uuid4()), str(author_id), message, total_seconds)
         data = reminder.serialize()
         name = data["id"]
         data.pop("id")
@@ -41,7 +41,7 @@ class ReminderService:
 
     async def _set_reminder(self, reminder):
         async def remind(bot, reminder):
-            author = (await bot.fetch_user(reminder.author_id))
+            author = await bot.fetch_user(reminder.author_id)
             text = "You asked me to remind you about: "
             text += f"```{reminder.message}```"
             await author.send(text)

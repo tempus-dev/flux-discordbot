@@ -8,5 +8,7 @@ install:
 jobs:
   include:
     - stage: lint
-      before_script: pip install flake8
-      script: flake8 .
+      before_script: pip install -r requirements-dev.txt
+      script: |
+        flake8 .
+        black --check .

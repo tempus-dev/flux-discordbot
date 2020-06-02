@@ -1,5 +1,6 @@
 import time
 import random
+import typing
 
 import discord
 from discord.ext import commands
@@ -136,6 +137,7 @@ class General(commands.Cog, name="General"):
                         e.add_field(name=cmd, value=page)
                 return await ctx.send(embed=e)
 
+
     @commands.command()
     async def ping(self, ctx) -> discord.Message:
         """Ping pong!"""
@@ -154,63 +156,67 @@ class General(commands.Cog, name="General"):
         You can put 2+ words by putting your reminder message in quotes.
         Example: "reminder words" """
         if not ctx.bot.db_client:
-            return await ctx.send("Without the database running, this command"
-                                  " is defunct. "
-                                  "Please contact the bot maintainer.")
+            await ctx.send(
+                "Without the database running, this command"
+                " is defunct. "
+                "Please use `.contact` with error:"
+                " `ERR_CONN_FAILURE`"
+            )
+            return
         if not duration:
             raise commands.MissingRequiredArgument(
-                ctx.commmand.clean_params['duration']
+                ctx.commmand.clean_params["duration"]
             )
         duration = " ".join(duration)
-        duration = self.parse_time(duration)
+        duration = ctx.bot.parse_time(duration)
         await ReminderService(ctx.bot).new_reminder(
             ctx.author.id, to_remind, duration)
+
         return await ctx.send("Reminder set!")
 
-    @commands.command(name='points')
+    @commands.command(name="points")
     async def points(self, ctx, user: discord.Member = None) -> None:
         """Check yours or someone else's points."""
         if not ctx.bot.db_client:
-            await ctx.send("Without the database running, this command"
-                           " is defunct. "
-                           "Please use `.contact` with error:"
-                           " `ERR_CONN_FAILURE`"
-                           )
+            await ctx.send(
+                "Without the database running, this command"
+                " is defunct. "
+                "Please use `.contact` with error:"
+                " `ERR_CONN_FAILURE`"
+            )
             return
-
         if not user:
             user = ctx.author
         if not ctx.bot.db("guilds").find(str(ctx.guild.id)):
             await ctx.send("No one has any points.")
             return
-
         points = ctx.bot.db("guilds").find(str(ctx.guild.id)).get("points")
 
         if not points:
             await ctx.send("No one has any points.")
             return
-
         if not points.get(str(user.id)):
-            await ctx.send(f"You have no points.") if \
-                ctx.author == user else \
-                await ctx.send(f"`{user}` has no points.")
+            await ctx.send(
+                "You have no points."
+            ) if ctx.author == user else await ctx.send(f"`{user}` has no points.")
             return
-
         points = f"{points} points" if points != 1 else f"{points} point"
 
-        await ctx.send(f"`{user}` has `{points}`.") if not \
-            user == ctx.author else \
-            await ctx.send(f"You have `{points}`.")
+        await ctx.send(
+            f"`{user}` has `{points}`."
+        ) if not user == ctx.author else await ctx.send(f"You have `{points}`.")
         return
 
     @commands.command()
     async def leaderboard(self, ctx):
         """This shows a leaderboard of all the points."""
         if not ctx.bot.db_client:
-            await ctx.send("Without the database running, this command"
-                           " is defunct. "
-                           "Please contact the bot maintainer."
-                           )
+            await ctx.send(
+                "Without the database running, this command"
+                " is defunct. "
+                "Please use `.contact` with error:"
+                " `ERR_CONN_FAILURE`"
+            )
             return
         leaderboardhandler = Leaderboard()
         if not ctx.bot.db("guilds").find(str(ctx.guild.id)):
@@ -226,13 +232,20 @@ class General(commands.Cog, name="General"):
             users[k] = {"points": v}
         if users == {}:
             return await ctx.send("No one has any points.  o.o")
-
         await leaderboardhandler.create(ctx, users, sort_by="points")
 
     @commands.group(invoke_without_subcommand=True)
     async def prefix(self, ctx, *,
                      prefix: typing.Optional[str] = None) -> None:
         """This command gets the prefix."""
+        if not ctx.bot.db_client:
+            await ctx.send(
+                "Without the database running, this command"
+                " is defunct. "
+                "Please use `.contact` with error:"
+                " `ERR_CONN_FAILURE`"
+            )
+            return
         if ctx.invoked_subcommand:
             return
         if prefix:
@@ -242,15 +255,11 @@ class General(commands.Cog, name="General"):
         if not ctx.guild:
             text = f"{ctx.bot.user.name}'s prefix is"
             text = text + f" `{ctx.bot.config.prefix}`"
-            embed = discord.Embed(
-                description=text
-            )
+            embed = discord.Embed(description=text)
             await ctx.send(embed=embed)
             return
         embed = discord.Embed(color=ctx.author.color)
-        embed.set_footer(
-            text="You can also mention the bot as a prefix anywhere."
-        )
+        embed.set_footer(text="You can also mention the bot as a prefix anywhere.")
         if not ctx.bot.db("guilds").find(str(ctx.guild.id)):
             text = f"{ctx.bot.user.name}'s "
             text = text + f"prefix is `{ctx.bot.config.prefix}`"
@@ -258,14 +267,15 @@ class General(commands.Cog, name="General"):
 
             await ctx.send(embed=embed)
             return
-
-        prefixes = ctx.bot.db("guilds").find(str(ctx.guild.id)).get('prefix')
+        prefixes = ctx.bot.db("guilds").find(str(ctx.guild.id)).get("prefix")
         if not prefixes:
-            prefixes = ['.']
+            prefixes = [ctx.bot.config.prefix]
         _len = len(prefixes)
-        name = f"{ctx.guild.name}'s" if \
-            ctx.guild.name[-1:] != "s" else \
-            f"{ctx.guild.name}'"
+        name = (
+            f"{ctx.guild.name}'s"
+            if ctx.guild.name[-1:] != "s"
+            else f"{ctx.guild.name}'"
+        )
         if _len == 1:
             text = f"{name} prefix for "
             text = text + f"{ctx.bot.user.name} is `{prefixes[0]}`"
@@ -277,7 +287,6 @@ class General(commands.Cog, name="General"):
             prefixes = prefixes.pop((_len - 1))
             text = f"{name} prefixes for {ctx.bot.user.name} are "
             text = text + f"`{'`, '.join(x for x in prefixes)} and `{last}`"
-
         embed.description = text
         await ctx.send(embed=embed)
 
@@ -287,6 +296,14 @@ class General(commands.Cog, name="General"):
         """This sets a prefix.
 
         You must have manage messages to use this command."""
+        if not ctx.bot.db_client:
+            await ctx.send(
+                "Without the database running, this command"
+                " is defunct. "
+                "Please use `.contact` with error:"
+                " `ERR_CONN_FAILURE`"
+            )
+            return
         if not ctx.guild:
             return
         guild_db = ctx.bot.db("guilds").find(str(ctx.guild.id))
@@ -294,15 +311,14 @@ class General(commands.Cog, name="General"):
             ctx.bot.db("guilds").insert(str(ctx.guild.id), ctx.bot.empty_guild)
             guild_db = ctx.bot.db("guilds").find(str(ctx.guild.id))
         if not guild_db.get("prefix"):
-            guild_db["prefix"] = ['.']
+            guild_db["prefix"] = []
             ctx.bot.db("guilds").update(str(ctx.guild.id), guild_db)
-
         guild_db["prefix"].extend(prefix.split(" "))
         ctx.bot.db("guilds").update(str(ctx.guild.id), guild_db)
         await ctx.send("Alright! Your prefix settings have been updated.")
 
     @commands.has_permissions(manage_messages=True)
-    @prefix.command(name="del", aliases=['delete'])
+    @prefix.command(name="del", aliases=["delete"])
     async def _del(self, ctx, *, prefix) -> None:
         """This deletes a prefix.
 
@@ -314,9 +330,8 @@ class General(commands.Cog, name="General"):
             ctx.bot.db("guilds").insert(str(ctx.guild.id), ctx.bot.empty_guild)
             guild_db = ctx.bot.db("guilds").find(str(ctx.guild.id))
         if not guild_db.get("prefix"):
-            guild_db["prefix"] = ['.']
+            guild_db["prefix"] = [ctx.bot.config.prefix]
             ctx.bot.db("guilds").update(str(ctx.guild.id), guild_db)
-
         [guild_db["prefix"].remove(x) for x in prefix.split(" ")]
         ctx.bot.db("guilds").update(str(ctx.guild.id), guild_db)
         await ctx.send("Alright! Your prefix settings have been updated.")
@@ -327,7 +342,7 @@ class General(commands.Cog, name="General"):
         embed = discord.Embed()
         uid = ctx.bot.user.id
         inv = f"http://discord.com/api/oauth2/authorize?client_id={uid}"
-        inv = inv + "&scope=bot&permission=388176"
+        inv = inv + "&scope=bot&permissions=388176"
         desc = "Thanks for choosing Flux!"
         embed.description = desc + f" My invite is [here!]({inv})"
         await ctx.send(embed=embed)
