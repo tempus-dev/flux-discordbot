@@ -111,7 +111,7 @@ To use the interactive help menu use the reactions:
     async def points(self, ctx, user: discord.Member = None) -> None:
         """Check yours or someone else's points."""
         if not ctx.bot.db_client:
-             await ctx.send("Without the database running, this command"
+            await ctx.send("Without the database running, this command"
                            " is defunct. "
                            "Please use `.contact` with error:"
                            " `ERR_CONN_FAILURE`"
@@ -145,8 +145,8 @@ To use the interactive help menu use the reactions:
     @commands.command()
     async def leaderboard(self, ctx):
         """This shows a leaderboard of all the points."""
-         if not ctx.bot.db_client:
-             await ctx.send("Without the database running, this command"
+        if not ctx.bot.db_client:
+            await ctx.send("Without the database running, this command"
                            " is defunct. "
                            "Please use `.contact` with error:"
                            " `ERR_CONN_FAILURE`"
@@ -172,8 +172,8 @@ To use the interactive help menu use the reactions:
     @commands.group()
     async def prefix(self, ctx) -> None:
         """This command gets the prefix."""
-         if not ctx.bot.db_client:
-             await ctx.send("Without the database running, this command"
+        if not ctx.bot.db_client:
+            await ctx.send("Without the database running, this command"
                            " is defunct. "
                            "Please use `.contact` with error:"
                            " `ERR_CONN_FAILURE`"
@@ -227,8 +227,8 @@ To use the interactive help menu use the reactions:
         """This sets a prefix.
 
         You must have manage messages to use this command."""
-           if not ctx.bot.db_client:
-               await ctx.send("Without the database running, this command"
+        if not ctx.bot.db_client:
+            await ctx.send("Without the database running, this command"
                            " is defunct. "
                            "Please use `.contact` with error:"
                            " `ERR_CONN_FAILURE`"
