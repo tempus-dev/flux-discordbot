@@ -162,7 +162,7 @@ class General(commands.Cog, name="General"):
                 ctx.commmand.clean_params['duration']
             )
         duration = " ".join(duration)
-        duration = ctx.bot.parse_time(duration)
+        duration = self.parse_time(duration)
         await ReminderService(ctx.bot).new_reminder(
             ctx.author.id, to_remind, duration)
         return await ctx.send("Reminder set!")
@@ -229,10 +229,15 @@ class General(commands.Cog, name="General"):
 
         await leaderboardhandler.create(ctx, users, sort_by="points")
 
-    @commands.group()
-    async def prefix(self, ctx) -> None:
+    @commands.group(invoke_without_subcommand=True)
+    async def prefix(self, ctx, *,
+                     prefix: typing.Optional[str] = None) -> None:
         """This command gets the prefix."""
         if ctx.invoked_subcommand:
+            return
+        if prefix:
+            await ctx.invoke(self._set, prefix=prefix)
+            print("manual invoke")
             return
         if not ctx.guild:
             text = f"{ctx.bot.user.name}'s prefix is"
