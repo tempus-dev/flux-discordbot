@@ -170,8 +170,8 @@ To use the interactive help menu use the reactions:
 
         await leaderboardhandler.create(ctx, users, sort_by="points")
 
-    @commands.group()
-    async def prefix(self, ctx) -> None:
+    @commands.group(invoke_without_command=True)
+    async def prefix(self, ctx, *, prefix: typing.Optional[str] = None) -> None:
         """This command gets the prefix."""
         if ctx.invoked_subcommand:
             return
@@ -193,7 +193,7 @@ To use the interactive help menu use the reactions:
 
         prefixes = ctx.bot.db("guilds").find(str(ctx.guild.id)).get("prefix")
         if not prefixes:
-            prefixes = ["."]
+            prefixes = [ctx.bot.config.prefix]
         _len = len(prefixes)
         name = (
             f"{ctx.guild.name}'s"
@@ -228,7 +228,7 @@ To use the interactive help menu use the reactions:
             ctx.bot.db("guilds").insert(str(ctx.guild.id), ctx.bot.empty_guild)
             guild_db = ctx.bot.db("guilds").find(str(ctx.guild.id))
         if not guild_db.get("prefix"):
-            guild_db["prefix"] = ["."]
+            guild_db["prefix"] = []
             ctx.bot.db("guilds").update(str(ctx.guild.id), guild_db)
 
         guild_db["prefix"].extend(prefix.split(" "))
@@ -248,7 +248,7 @@ To use the interactive help menu use the reactions:
             ctx.bot.db("guilds").insert(str(ctx.guild.id), ctx.bot.empty_guild)
             guild_db = ctx.bot.db("guilds").find(str(ctx.guild.id))
         if not guild_db.get("prefix"):
-            guild_db["prefix"] = ["."]
+            guild_db["prefix"] = [ctx.bot.config.prefix]
             ctx.bot.db("guilds").update(str(ctx.guild.id), guild_db)
 
         [guild_db["prefix"].remove(x) for x in prefix.split(" ")]
@@ -261,7 +261,7 @@ To use the interactive help menu use the reactions:
         embed = discord.Embed()
         uid = ctx.bot.user.id
         inv = f"http://discord.com/api/oauth2/authorize?client_id={uid}"
-        inv = inv + "&scope=bot&permission=388176"
+        inv = inv + "&scope=bot&permissions=388176"
         desc = "Thanks for choosing Flux!"
         embed.description = desc + f" My invite is [here!]({inv})"
         await ctx.send(embed=embed)
