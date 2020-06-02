@@ -110,7 +110,7 @@ To use the interactive help menu use the reactions:
     @commands.command(name="points")
     async def points(self, ctx, user: discord.Member = None) -> None:
         """Check yours or someone else's points."""
-         if not ctx.bot.db_client:
+        if not ctx.bot.db_client:
              await ctx.send("Without the database running, this command"
                            " is defunct. "
                            "Please use `.contact` with error:"
