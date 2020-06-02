@@ -282,6 +282,8 @@ class Bot(commands.Bot):
             )
         except discord.errors.NotFound:
             self.config.contact_channel = None
+        except discord.errors.Forbidden:
+            self.config.contact_channel = None
         game = discord.Game(f"{self.config.prefix}help for help!")
         await self.change_presence(status=discord.Status.idle, activity=game)
         self.reminders = ReminderService(self)

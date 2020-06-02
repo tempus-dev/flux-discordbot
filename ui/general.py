@@ -1,12 +1,15 @@
 import time
+import random
 import typing
 
 import discord
 from discord.ext import commands
-from disputils import BotEmbedPaginator
+from discord.ext.commands.core import GroupMixin
 
+import handlers.paginator as paginator
 from handlers.reminders import ReminderService
 from handlers.leaderboard import Leaderboard
+from handlers.helpformatter import HelpFormatter
 
 
 class General(commands.Cog, name="General"):
@@ -15,65 +18,121 @@ class General(commands.Cog, name="General"):
     def __init__(self):
         pass
 
-    @commands.command()
-    async def help(self, ctx) -> discord.Message:
-        """Helps the user with Flux commands"""
+    def get_all_subcommands(self, command):
+        yield command
+        if type(command) is discord.ext.commands.core.Group:
+            for subcmd in command.commands:
+                yield from self.get_all_subcommands(subcmd)
 
-        embeds = []
+    def get_all_commands(self, bot):
+        """Returns a list of all command names for the bot"""
+        # First lets create a set of all the parent names
+        for cmd in bot.commands:
+            yield from self.get_all_subcommands(cmd)
+
+    @commands.command(name="help")
+    async def _help(self, ctx, *, command=None):
+        """This command right here!"""
+        groups = {}
+        entries = []
         blacklisted_cogs = ["Developer", "Insights"]
-        prefix = ctx.prefix
+        cprefx = ctx.prefix.replace("!", "")
+        cprefx = cprefx.replace(ctx.bot.user.mention, "@" + ctx.bot.user.name)
 
-        e = discord.Embed(color=ctx.author.color)
-        e.set_author(name="Help", icon_url=ctx.bot.user.avatar_url)
-        description = """Welcome to the interactive help menu!
-Here you can see the commands and their uses.
+        if command is not None:
+            command = ctx.bot.get_command(command)
 
-To use the interactive help menu use the reactions:
-:track_previous: To go to this menu.
-:arrow_backward: To go to the last page.
-:arrow_forward: To go to the next page.
-:track_next: To go to the last page.
-:stop_button: To stop the interactive help menu.
-        """
-        e.description = description
-        embeds.append(e)
-
-        for cog in ctx.bot.cogs:
-            cog = ctx.bot.cogs[cog]
-            if cog.qualified_name in blacklisted_cogs or not cog.get_commands:
-                continue
-            embed = discord.Embed(color=ctx.author.color)
-            embed.set_author(name=cog.qualified_name, icon_url=ctx.bot.user.avatar_url)
-            commands = list(cog.walk_commands())
-            embed.add_field(
-                name="Commands:", value=":stop_button: To stop at any time."
-            )
-            for command in commands:
-                if isinstance(command, discord.ext.commands.Group):
+        if command is None:
+            for cmd in self.get_all_commands(ctx.bot):
+                try:
+                    can_run = await cmd.can_run(ctx)
+                    if not can_run or not cmd.enabled or cmd.hidden:
+                        continue
+                    elif cmd.cog_name in blacklisted_cogs:
+                        continue
+                except commands.errors.MissingPermissions:
                     continue
-                if command.parent:
-                    params = command.clean_params
-                    params = "<" + ">, <".join(params) + ">"
-                    embed.add_field(
-                        name=f"**{ctx.prefix}{command.parent}"
-                        f" {command.name}** {params}",
-                        value=command.help,
-                        inline=False,
-                    )
-                else:
-                    params = command.clean_params
-                    params = "<" + ">, <".join(params) + ">"
-                    if params == "<>":
-                        params = ""
-                    embed.add_field(
-                        name=f"**{prefix}{command.name}** {params}",
-                        value=command.help,
-                        inline=False,
-                    )
+                except commands.errors.CheckFailure:
+                    continue
 
-                    embeds.append(embed)
-        p = BotEmbedPaginator(ctx, embeds)
-        return await p.run()
+                cog = cmd.cog_name
+                if cog in groups:
+                    groups[cog].append(cmd)
+                else:
+                    groups[cog] = [cmd]
+
+            for cog, cmds in groups.items():
+                entry = {"title": "{} Commands".format(cog), "fields": []}
+
+                for cmd in cmds:
+                    if not cmd.help:
+                        # Assume if there's no description for a command,
+                        # it's not supposed to be used
+                        # I.e. the !command command. It's just a parent
+                        continue
+
+                    alias = "(or "
+                    aliases = cmd.aliases
+                    count = len(aliases)
+                    i = 0
+                    for a in aliases:
+                        i += 1
+                        if count == i:
+                            alias = alias + f"{a})"
+                        else:
+                            alias = alias + f"{a}, "
+                    description = cmd.help.partition("\n")[0]
+                    aliases = alias if len(cmd.aliases) > 0 else ""
+                    name_fmt = f"{cprefx}**{cmd.qualified_name}** {aliases}"
+                    entry["fields"].append(
+                        {"name": name_fmt, "value": description, "inline": False}
+                    )
+                entries.append(entry)
+
+            entries = sorted(entries, key=lambda x: x["title"])
+            try:
+                pages = paginator.DetailedPages(
+                    ctx.bot, message=ctx.message, entries=entries
+                )
+                pages.embed.set_thumbnail(url=ctx.bot.user.avatar_url)
+                await pages.paginate()
+            except paginator.CannotPaginate as e:
+                await ctx.send(str(e))
+        else:
+            Formatter = HelpFormatter()
+            randchoice = random.choice
+            colour = "".join([randchoice("0123456789ABCDEF") for x in range(6)])
+            colour = int(colour, 16)
+
+            pages = await Formatter.format_help_for(ctx, command)
+            cmd = cprefx + command.qualified_name + " " + command.signature
+            if isinstance(command, GroupMixin):
+                if ctx.guild:
+                    e = discord.Embed(colour=ctx.author.colour)
+                    e.add_field(name=cmd, value=command.help, inline=False)
+                    text = ""
+                    all_subcommands = []  # idk how to do this
+                    for name in command.all_commands:
+                        all_subcommands.append(name)
+                    for name in all_subcommands:
+                        subcmd = command.all_commands[name]
+                        if name in subcmd.aliases:
+                            continue
+                        text += f"**{subcmd.name}**: {subcmd.short_doc}\n"
+                    e.add_field(name="Commands:", value=text, inline=False)
+                    msg = f"Type {cprefx}help {command.qualified_name} command"
+                    msg += " for more info on said command."
+                    e.set_footer(text=msg)
+                    return await ctx.send(embed=e)
+            else:
+                for page in pages:
+                    if ctx.guild:
+                        e = discord.Embed(color=ctx.author.colour)
+                        e.add_field(name=cmd, value=page)
+                    else:
+                        e = discord.embed(color=colour)
+                        e.add_field(name=cmd, value=page)
+                return await ctx.send(embed=e)
 
     @commands.command()
     async def ping(self, ctx) -> discord.Message:
@@ -107,6 +166,7 @@ To use the interactive help menu use the reactions:
         duration = " ".join(duration)
         duration = ctx.bot.parse_time(duration)
         await ReminderService(ctx.bot).new_reminder(ctx.author.id, to_remind, duration)
+
         return await ctx.send("Reminder set!")
 
     @commands.command(name="points")
@@ -169,7 +229,7 @@ To use the interactive help menu use the reactions:
             return await ctx.send("No one has any points.  o.o")
         await leaderboardhandler.create(ctx, users, sort_by="points")
 
-    @commands.group(invoke_without_command=True)
+    @commands.group(invoke_without_subcommand=True)
     async def prefix(self, ctx, *, prefix: typing.Optional[str] = None) -> None:
         """This command gets the prefix."""
         if not ctx.bot.db_client:
@@ -181,6 +241,10 @@ To use the interactive help menu use the reactions:
             )
             return
         if ctx.invoked_subcommand:
+            return
+        if prefix:
+            await ctx.invoke(self._set, prefix=prefix)
+            print("manual invoke")
             return
         if not ctx.guild:
             text = f"{ctx.bot.user.name}'s prefix is"
