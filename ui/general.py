@@ -30,14 +30,14 @@ class General(commands.Cog, name="General"):
         for cmd in bot.commands:
             yield from self.get_all_subcommands(cmd)
 
-    @commands.command(name='help')
+    @commands.command(name="help")
     async def _help(self, ctx, *, command=None):
         """This command right here!"""
         groups = {}
         entries = []
-        blacklisted_cogs = ['Developer', 'Insights']
+        blacklisted_cogs = ["Developer", "Insights"]
         cprefx = ctx.prefix.replace("!", "")
-        cprefx = cprefx.replace(ctx.bot.user.mention, '@' + ctx.bot.user.name)
+        cprefx = cprefx.replace(ctx.bot.user.mention, "@" + ctx.bot.user.name)
 
         if command is not None:
             command = ctx.bot.get_command(command)
@@ -62,8 +62,7 @@ class General(commands.Cog, name="General"):
                     groups[cog] = [cmd]
 
             for cog, cmds in groups.items():
-                entry = {'title': "{} Commands".format(cog),
-                         'fields': []}
+                entry = {"title": "{} Commands".format(cog), "fields": []}
 
                 for cmd in cmds:
                     if not cmd.help:
@@ -82,20 +81,19 @@ class General(commands.Cog, name="General"):
                             alias = alias + f"{a})"
                         else:
                             alias = alias + f"{a}, "
-                    description = cmd.help.partition('\n')[0]
+                    description = cmd.help.partition("\n")[0]
                     aliases = alias if len(cmd.aliases) > 0 else ""
                     name_fmt = f"{cprefx}**{cmd.qualified_name}** {aliases}"
-                    entry['fields'].append({
-                        'name': name_fmt,
-                        'value': description,
-                        'inline': False
-                    })
+                    entry["fields"].append(
+                        {"name": name_fmt, "value": description, "inline": False}
+                    )
                 entries.append(entry)
 
-            entries = sorted(entries, key=lambda x: x['title'])
+            entries = sorted(entries, key=lambda x: x["title"])
             try:
-                pages = paginator.DetailedPages(ctx.bot, message=ctx.message,
-                                                entries=entries)
+                pages = paginator.DetailedPages(
+                    ctx.bot, message=ctx.message, entries=entries
+                )
                 pages.embed.set_thumbnail(url=ctx.bot.user.avatar_url)
                 await pages.paginate()
             except paginator.CannotPaginate as e:
@@ -103,8 +101,7 @@ class General(commands.Cog, name="General"):
         else:
             Formatter = HelpFormatter()
             randchoice = random.choice
-            colour = ''.join([randchoice('0123456789ABCDEF')
-                              for x in range(6)])
+            colour = "".join([randchoice("0123456789ABCDEF") for x in range(6)])
             colour = int(colour, 16)
 
             pages = await Formatter.format_help_for(ctx, command)
@@ -137,7 +134,6 @@ class General(commands.Cog, name="General"):
                         e.add_field(name=cmd, value=page)
                 return await ctx.send(embed=e)
 
-
     @commands.command()
     async def ping(self, ctx) -> discord.Message:
         """Ping pong!"""
@@ -169,8 +165,7 @@ class General(commands.Cog, name="General"):
             )
         duration = " ".join(duration)
         duration = ctx.bot.parse_time(duration)
-        await ReminderService(ctx.bot).new_reminder(
-            ctx.author.id, to_remind, duration)
+        await ReminderService(ctx.bot).new_reminder(ctx.author.id, to_remind, duration)
 
         return await ctx.send("Reminder set!")
 
@@ -235,8 +230,7 @@ class General(commands.Cog, name="General"):
         await leaderboardhandler.create(ctx, users, sort_by="points")
 
     @commands.group(invoke_without_subcommand=True)
-    async def prefix(self, ctx, *,
-                     prefix: typing.Optional[str] = None) -> None:
+    async def prefix(self, ctx, *, prefix: typing.Optional[str] = None) -> None:
         """This command gets the prefix."""
         if not ctx.bot.db_client:
             await ctx.send(
