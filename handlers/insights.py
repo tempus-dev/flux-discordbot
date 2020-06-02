@@ -40,7 +40,7 @@ class Insights(commands.Cog):
         }
         db.update("errors", err)
         embed = discord.Embed()
-        embed.title = f"Non command exception occurred"
+        embed.title = "Non command exception occurred"
         embed.description = f"```py\n{error}\n```"
         embed.timestamp = dt.now()  # TODO: confirm that I can pass dt.now()
         embed.set_author(name=f"Error ID: {uuid}")

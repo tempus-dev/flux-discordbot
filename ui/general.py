@@ -1,4 +1,5 @@
 import time
+import typing
 
 import discord
 from discord.ext import commands
@@ -92,11 +93,13 @@ To use the interactive help menu use the reactions:
         You can put 2+ words by putting your reminder message in quotes.
         Example: "reminder words" """
         if not ctx.bot.db_client:
-            return await ctx.send(
+            await ctx.send(
                 "Without the database running, this command"
                 " is defunct. "
-                "Please contact the bot maintainer."
+                "Please use `.contact` with error:"
+                " `ERR_CONN_FAILURE`"
             )
+            return
         if not duration:
             raise commands.MissingRequiredArgument(
                 ctx.commmand.clean_params["duration"]
@@ -117,25 +120,21 @@ To use the interactive help menu use the reactions:
                 " `ERR_CONN_FAILURE`"
             )
             return
-
         if not user:
             user = ctx.author
         if not ctx.bot.db("guilds").find(str(ctx.guild.id)):
             await ctx.send("No one has any points.")
             return
-
         points = ctx.bot.db("guilds").find(str(ctx.guild.id)).get("points")
 
         if not points:
             await ctx.send("No one has any points.")
             return
-
         if not points.get(str(user.id)):
             await ctx.send(
-                f"You have no points."
+                "You have no points."
             ) if ctx.author == user else await ctx.send(f"`{user}` has no points.")
             return
-
         points = f"{points} points" if points != 1 else f"{points} point"
 
         await ctx.send(
@@ -150,7 +149,8 @@ To use the interactive help menu use the reactions:
             await ctx.send(
                 "Without the database running, this command"
                 " is defunct. "
-                "Please contact the bot maintainer."
+                "Please use `.contact` with error:"
+                " `ERR_CONN_FAILURE`"
             )
             return
         leaderboardhandler = Leaderboard()
@@ -167,12 +167,19 @@ To use the interactive help menu use the reactions:
             users[k] = {"points": v}
         if users == {}:
             return await ctx.send("No one has any points.  o.o")
-
         await leaderboardhandler.create(ctx, users, sort_by="points")
 
     @commands.group(invoke_without_command=True)
     async def prefix(self, ctx, *, prefix: typing.Optional[str] = None) -> None:
         """This command gets the prefix."""
+        if not ctx.bot.db_client:
+            await ctx.send(
+                "Without the database running, this command"
+                " is defunct. "
+                "Please use `.contact` with error:"
+                " `ERR_CONN_FAILURE`"
+            )
+            return
         if ctx.invoked_subcommand:
             return
         if not ctx.guild:
@@ -190,7 +197,6 @@ To use the interactive help menu use the reactions:
 
             await ctx.send(embed=embed)
             return
-
         prefixes = ctx.bot.db("guilds").find(str(ctx.guild.id)).get("prefix")
         if not prefixes:
             prefixes = [ctx.bot.config.prefix]
@@ -211,7 +217,6 @@ To use the interactive help menu use the reactions:
             prefixes = prefixes.pop((_len - 1))
             text = f"{name} prefixes for {ctx.bot.user.name} are "
             text = text + f"`{'`, '.join(x for x in prefixes)} and `{last}`"
-
         embed.description = text
         await ctx.send(embed=embed)
 
@@ -221,6 +226,14 @@ To use the interactive help menu use the reactions:
         """This sets a prefix.
 
         You must have manage messages to use this command."""
+        if not ctx.bot.db_client:
+            await ctx.send(
+                "Without the database running, this command"
+                " is defunct. "
+                "Please use `.contact` with error:"
+                " `ERR_CONN_FAILURE`"
+            )
+            return
         if not ctx.guild:
             return
         guild_db = ctx.bot.db("guilds").find(str(ctx.guild.id))
@@ -230,7 +243,6 @@ To use the interactive help menu use the reactions:
         if not guild_db.get("prefix"):
             guild_db["prefix"] = []
             ctx.bot.db("guilds").update(str(ctx.guild.id), guild_db)
-
         guild_db["prefix"].extend(prefix.split(" "))
         ctx.bot.db("guilds").update(str(ctx.guild.id), guild_db)
         await ctx.send("Alright! Your prefix settings have been updated.")
@@ -250,7 +262,6 @@ To use the interactive help menu use the reactions:
         if not guild_db.get("prefix"):
             guild_db["prefix"] = [ctx.bot.config.prefix]
             ctx.bot.db("guilds").update(str(ctx.guild.id), guild_db)
-
         [guild_db["prefix"].remove(x) for x in prefix.split(" ")]
         ctx.bot.db("guilds").update(str(ctx.guild.id), guild_db)
         await ctx.send("Alright! Your prefix settings have been updated.")
