@@ -92,12 +92,12 @@ To use the interactive help menu use the reactions:
         You can put 2+ words by putting your reminder message in quotes.
         Example: "reminder words" """
          if not ctx.bot.db_client:
-            await ctx.send("Without the database running, this command"
+             await ctx.send("Without the database running, this command"
                            " is defunct. "
                            "Please use `.contact` with error:"
                            " `ERR_CONN_FAILURE`"
                            )
-            return
+             return
         if not duration:
             raise commands.MissingRequiredArgument(
                 ctx.commmand.clean_params["duration"]
@@ -111,13 +111,12 @@ To use the interactive help menu use the reactions:
     async def points(self, ctx, user: discord.Member = None) -> None:
         """Check yours or someone else's points."""
       if not ctx.bot.db_client:
-            await ctx.send("Without the database running, this command"
+          await ctx.send("Without the database running, this command"
                            " is defunct. "
                            "Please use `.contact` with error:"
                            " `ERR_CONN_FAILURE`"
                            )
-            return
- 
+          return
 
         if not user:
             user = ctx.author
@@ -148,12 +147,12 @@ To use the interactive help menu use the reactions:
     async def leaderboard(self, ctx):
         """This shows a leaderboard of all the points."""
          if not ctx.bot.db_client:
-            await ctx.send("Without the database running, this command"
+             await ctx.send("Without the database running, this command"
                            " is defunct. "
                            "Please use `.contact` with error:"
                            " `ERR_CONN_FAILURE`"
                            )
-            return
+             return
         leaderboardhandler = Leaderboard()
         if not ctx.bot.db("guilds").find(str(ctx.guild.id)):
             await ctx.send("No one has any points.")
@@ -175,12 +174,12 @@ To use the interactive help menu use the reactions:
     async def prefix(self, ctx) -> None:
         """This command gets the prefix."""
          if not ctx.bot.db_client:
-            await ctx.send("Without the database running, this command"
+             await ctx.send("Without the database running, this command"
                            " is defunct. "
                            "Please use `.contact` with error:"
                            " `ERR_CONN_FAILURE`"
                            )
-            return
+             return
         if ctx.invoked_subcommand:
             return
         if not ctx.guild:
@@ -230,12 +229,12 @@ To use the interactive help menu use the reactions:
 
         You must have manage messages to use this command."""
            if not ctx.bot.db_client:
-            await ctx.send("Without the database running, this command"
+               await ctx.send("Without the database running, this command"
                            " is defunct. "
                            "Please use `.contact` with error:"
                            " `ERR_CONN_FAILURE`"
                            )
-            return
+               return
         if not ctx.guild:
             return
         guild_db = ctx.bot.db("guilds").find(str(ctx.guild.id))
