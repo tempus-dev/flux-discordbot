@@ -26,52 +26,58 @@ class Pages:
         if left_over:
             pages += 1
         self.maximum_pages = pages
-        self.embed = discord.Embed(
-            color=message.author.color) if message.guild else \
-            discord.Embed(color=0xff0000)
+        self.embed = (
+            discord.Embed(color=message.author.color)
+            if message.guild
+            else discord.Embed(color=0xFF0000)
+        )
         self.paginating = len(entries) > per_page
         self.reaction_emojis = [
-            ('\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}',
-             self.first_page),
-            ('\N{BLACK LEFT-POINTING TRIANGLE}', self.previous_page),
-            ('\N{BLACK RIGHT-POINTING TRIANGLE}', self.next_page),
-            ('\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}',
-             self.last_page),
-            ('\N{INPUT SYMBOL FOR NUMBERS}', self.numbered_page),
-            ('\N{BLACK SQUARE FOR STOP}', self.stop_pages),
-            ('\N{INFORMATION SOURCE}', self.show_help),
+            (
+                "\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}",
+                self.first_page,
+            ),
+            ("\N{BLACK LEFT-POINTING TRIANGLE}", self.previous_page),
+            ("\N{BLACK RIGHT-POINTING TRIANGLE}", self.next_page),
+            (
+                "\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}",
+                self.last_page,
+            ),
+            ("\N{INPUT SYMBOL FOR NUMBERS}", self.numbered_page),
+            ("\N{BLACK SQUARE FOR STOP}", self.stop_pages),
+            ("\N{INFORMATION SOURCE}", self.show_help),
         ]
 
         server = self.message.guild
         if server is not None:
             self.permissions = self.message.channel.permissions_for(server.me)
         else:
-            self.permissions = self.message.channel.permissions_for(
-                self.bot.user)
+            self.permissions = self.message.channel.permissions_for(self.bot.user)
 
         if not self.permissions.embed_links:
-            raise CannotPaginate('Bot does not have embed links permission.')
+            raise CannotPaginate("Bot does not have embed links permission.")
 
     def get_page(self, page):
         base = (page - 1) * self.per_page
-        return self.entries[base:base + self.per_page]
+        return self.entries[base : base + self.per_page]
 
     async def show_page(self, page, *, first=False):
         self.current_page = page
         entries = self.get_page(page)
         p = []
         for t in enumerate(entries, 1 + ((page - 1) * self.per_page)):
-            p.append(f'{t}. {t}')
+            p.append(f"{t}. {t}")
 
-        self.embed.set_footer(text=f"Page {page}/{self.maximum_pages}"
-                                   f" ({len(self.entries)} entries)")
+        self.embed.set_footer(
+            text=f"Page {page}/{self.maximum_pages}" f" ({len(self.entries)} entries)"
+        )
 
         if not self.paginating:
-            self.embed.description = '\n'.join(p)
+            self.embed.description = "\n".join(p)
             return await self.message.channel.send(embed=self.embed)
 
         if not first:
-            self.embed.description = '\n'.join(p)
+            self.embed.description = "\n".join(p)
             try:
                 await self.message.edit(embed=self.embed)
             except discord.NotFound:
@@ -80,18 +86,19 @@ class Pages:
 
         # verify we can actually use the pagination session
         if not self.permissions.add_reactions:
-            raise CannotPaginate('Bot does not have add reactions permission.')
+            raise CannotPaginate("Bot does not have add reactions permission.")
 
         if not self.permissions.read_message_history:
-            raise CannotPaginate('Bot does not have Read Message'
-                                 ' History permission.')
+            raise CannotPaginate(
+                "Bot does not have Read Message" " History permission."
+            )
 
-        p.append('')
-        p.append('Confused? React with \N{INFORMATION SOURCE} for more info.')
-        self.embed.description = '\n'.join(p)
+        p.append("")
+        p.append("Confused? React with \N{INFORMATION SOURCE} for more info.")
+        self.embed.description = "\n".join(p)
         self.message = await self.message.channel.send(embed=self.embed)
         for (reaction, _) in self.reaction_emojis:
-            if self.maximum_pages == 2 and reaction in ('\u23ed', '\u23ee'):
+            if self.maximum_pages == 2 and reaction in ("\u23ed", "\u23ee"):
                 # no |<< or >>| buttons if we only have two pages
                 # we can't forbid it if someone ends up using it but remove
                 # it from the default set
@@ -131,7 +138,7 @@ class Pages:
         """lets you type a page number to go to"""
         to_delete = []
         channel = self.message.channel
-        to_delete.append(await channel.send('What page do you want to go to?'))
+        to_delete.append(await channel.send("What page do you want to go to?"))
 
         def check(m):
             if m.author == self.author and m.channel == self.message.channel:
@@ -140,7 +147,7 @@ class Pages:
                 return False
 
         try:
-            msg = await self.bot.wait_for('message', check=check, timeout=30.0)
+            msg = await self.bot.wait_for("message", check=check, timeout=30.0)
         except asyncio.TimeoutError:
             msg = None
         if msg is not None:
@@ -149,11 +156,14 @@ class Pages:
             if page != 0 and page <= self.maximum_pages:
                 await self.show_page(page)
             else:
-                to_delete.append(await self.message.channel.send(
-                    f'Invalid page given. ({page}/{self.maximum_pages})'))
+                to_delete.append(
+                    await self.message.channel.send(
+                        f"Invalid page given. ({page}/{self.maximum_pages})"
+                    )
+                )
                 await asyncio.sleep(5)
         else:
-            to_delete.append(await self.message.channel.send('Took too long.'))
+            to_delete.append(await self.message.channel.send("Took too long."))
             await asyncio.sleep(5)
 
         try:
@@ -164,16 +174,18 @@ class Pages:
     async def show_help(self):
         """shows this message"""
         e = discord.Embed()
-        messages = ['Welcome to the interactive paginator!\n',
-                    'This interactively allows you to see pages '
-                    'of text by navigating with '
-                    'reactions. They are as follows:\n']
+        messages = [
+            "Welcome to the interactive paginator!\n",
+            "This interactively allows you to see pages "
+            "of text by navigating with "
+            "reactions. They are as follows:\n",
+        ]
 
         for (emoji, func) in self.reaction_emojis:
-            messages.append(f'{emoji} {func.__doc__}')
+            messages.append(f"{emoji} {func.__doc__}")
 
-        e.description = '\n'.join(messages)
-        e.colour = 0x738bd7  # blurple
+        e.description = "\n".join(messages)
+        e.colour = 0x738BD7  # blurple
         curn = self.current_page
         e.set_footer(text=f"We were on page {curn} before this message.")
         await self.message.edit(embed=e)
@@ -190,8 +202,11 @@ class Pages:
         self.paginating = False
 
     def react_check(self, reaction, user):
-        if user is None or user.id != self.author.id or \
-                reaction.message.id != self.message.id:
+        if (
+            user is None
+            or user.id != self.author.id
+            or reaction.message.id != self.message.id
+        ):
             return False
 
         for (emoji, func) in self.reaction_emojis:
@@ -206,18 +221,17 @@ class Pages:
 
         while self.paginating:
             try:
-                reaction_add = self.bot.wait_for('reaction_add',
-                                                 check=self.react_check,
-                                                 timeout=120.0)
+                reaction_add = self.bot.wait_for(
+                    "reaction_add", check=self.react_check, timeout=120.0
+                )
                 reaction_add = asyncio.ensure_future(reaction_add)
-                reaction_remove = self.bot.wait_for('reaction_remove',
-                                                    check=self.react_check,
-                                                    timeout=120.0)
+                reaction_remove = self.bot.wait_for(
+                    "reaction_remove", check=self.react_check, timeout=120.0
+                )
                 reaction_remove = asyncio.ensure_future(reaction_remove)
                 aws = {reaction_add, reaction_remove}
-                constant = 'FIRST_COMPLETED'
-                completed, pending = await asyncio.wait(aws,
-                                                        return_when=constant)
+                constant = "FIRST_COMPLETED"
+                completed, pending = await asyncio.wait(aws, return_when=constant)
                 for first_completed in completed:
                     react, user = first_completed.result()
                     break
@@ -247,7 +261,7 @@ class DetailedPages(Pages):
     more data on a page, more fields, etc. and page through each 'thing'"""
 
     def __init__(self, *args, **kwargs):
-        kwargs['per_page'] = 1
+        kwargs["per_page"] = 1
         super().__init__(*args, **kwargs)
 
     def get_page(self, page):
@@ -257,17 +271,21 @@ class DetailedPages(Pages):
         self.current_page = page
         entries = self.get_page(page)
 
-        self.embed.set_footer(text='Page %s/%s (%s entries)' %
-                              (page, self.maximum_pages, len(self.entries)))
+        self.embed.set_footer(
+            text="Page %s/%s (%s entries)"
+            % (page, self.maximum_pages, len(self.entries))
+        )
         self.embed.clear_fields()
         self.embed.description = ""
 
         for key, value in entries.items():
-            if key == 'fields':
+            if key == "fields":
                 for f in value:
-                    self.embed.add_field(name=f.get('name'),
-                                         value=f.get('value'),
-                                         inline=f.get('inline', True))
+                    self.embed.add_field(
+                        name=f.get("name"),
+                        value=f.get("value"),
+                        inline=f.get("inline", True),
+                    )
             else:
                 setattr(self.embed, key, value)
 
@@ -283,22 +301,23 @@ class DetailedPages(Pages):
 
         # verify we can actually use the pagination session
         if not self.permissions.add_reactions:
-            raise CannotPaginate('Bot does not have add reactions permission.')
+            raise CannotPaginate("Bot does not have add reactions permission.")
 
         if not self.permissions.read_message_history:
-            raise CannotPaginate('Bot does not have Read Message '
-                                 'History permission.')
+            raise CannotPaginate(
+                "Bot does not have Read Message " "History permission."
+            )
         info_emoji = "\N{INFORMATION SOURCE}"
         if self.embed.description:
-            self.embed.description += '\nConfused? '
-            self.embed.description += f'React with {info_emoji} for more info.'
+            self.embed.description += "\nConfused? "
+            self.embed.description += f"React with {info_emoji} for more info."
         else:
-            self.embed.description = f'\nConfused? '
-            self.embed.description += f'React with {info_emoji} for more info.'
+            self.embed.description = "\nConfused? "
+            self.embed.description += f"React with {info_emoji} for more info."
 
         self.message = await self.message.channel.send(embed=self.embed)
         for (reaction, _) in self.reaction_emojis:
-            if self.maximum_pages == 2 and reaction in ('\u23ed', '\u23ee'):
+            if self.maximum_pages == 2 and reaction in ("\u23ed", "\u23ee"):
                 # no |<< or >>| buttons if we only have two pages
                 # we can't forbid it if someone ends up using it but remove
                 # it from the default set
