@@ -33,7 +33,7 @@ class HelpFormatter:
     def shorten(self, text):
         """Shortens text to fit into the :attr:`width`."""
         if len(text) > self.width:
-            return text[:self.width - 3] + '...'
+            return text[: self.width - 3] + "..."
         return text
 
     @property
@@ -41,12 +41,20 @@ class HelpFormatter:
         """Returns the largest name length of a command or if it has subcommands
         the largest subcommand name."""
         try:
-            commands = self.command.all_commands if not self.is_cog() else \
-                self.context.bot.all_commands
+            commands = (
+                self.command.all_commands
+                if not self.is_cog()
+                else self.context.bot.all_commands
+            )
             if commands:
-                m = max(map(lambda c: len(c.name) if
-                            self.show_hidden or not c.hidden else
-                            0, commands.values()))
+                m = max(
+                    map(
+                        lambda c: len(c.name)
+                        if self.show_hidden or not c.hidden
+                        else 0,
+                        commands.values(),
+                    )
+                )
                 return m
             return 0
         except AttributeError:
@@ -63,7 +71,7 @@ class HelpFormatter:
         # for this common use case rather than waste performance for the
         # odd one.
         clean_prefix = self.context.prefix.replace("!", "")
-        clean_prefix = clean_prefix.replace(user.mention, '@' + user.name)
+        clean_prefix = clean_prefix.replace(user.mention, "@" + user.name)
         return clean_prefix
 
     def get_command_signature(self):
@@ -74,9 +82,12 @@ class HelpFormatter:
 
     def get_ending_note(self):
         command_name = self.context.invoked_with
-        return "Type {0}{1} command for more info on a command.\n" \
-               "You can also type {0}{1} category for more info on a category.".format(  # noqa: E501
-                   self.clean_prefix, command_name)
+        return (
+            "Type {0}{1} command for more info on a command.\n"
+            "You can also type {0}{1} category for more info on a category.".format(  # noqa: E501
+                self.clean_prefix, command_name
+            )
+        )
 
     async def filter_command_list(self):
         """Returns a filtered list of commands based on the two attributes
@@ -102,12 +113,15 @@ class HelpFormatter:
 
             cmd = tup[1]
             try:
-                return (await cmd.can_run(self.context))
+                return await cmd.can_run(self.context)
             except CommandError:
                 return False
 
-        iterator = self.command.all_commands.items() if not self.is_cog(
-        ) else self.context.bot.all_commands.items()
+        iterator = (
+            self.command.all_commands.items()
+            if not self.is_cog()
+            else self.context.bot.all_commands.items()
+        )
         if self.show_check_failure:
             return filter(sane_no_suspension_point_predicate, iterator)
 
@@ -126,8 +140,9 @@ class HelpFormatter:
                 # skip aliases
                 continue
 
-            entry = '  {0:<{width}} {1}'.format(
-                name, command.short_doc, width=max_width)
+            entry = "  {0:<{width}} {1}".format(
+                name, command.short_doc, width=max_width
+            )
             shortened = self.shorten(entry)
             self._paginator.add_line(shortened)
 
@@ -138,18 +153,21 @@ class HelpFormatter:
         """
         self.context = context
         self.command = command_or_bot
-        return (await self.format())
+        return await self.format()
 
     async def format(self):
         """Handles the actual behaviour involved with formatting.
         To change the behaviour, this method should be overridden.
         """
-        self._paginator = Paginator(prefix='', suffix='')
+        self._paginator = Paginator(prefix="", suffix="")
 
         # we need a padding of ~80 or so
 
-        description = self.command.description if not self.is_cog(
-        ) else inspect.getdoc(self.command)
+        description = (
+            self.command.description
+            if not self.is_cog()
+            else inspect.getdoc(self.command)
+        )
 
         if description:
             # <description> portion
@@ -172,7 +190,7 @@ class HelpFormatter:
             cog = tup[1].cog_name
             # we insert the zero width space there to give it approximate
             # last place sorting position.
-            return cog + ':' if cog is not None else '\u200bNo Category:'
+            return cog + ":" if cog is not None else "\u200bNo Category:"
 
         filtered = await self.filter_command_list()
         if self.is_bot():
