@@ -199,7 +199,7 @@ class Projects(commands.Cog, name="Projects"):
             )
         ctx.projects.add_project_members(project, [x.id for x in members])
         if members == ctx.author:
-            await ctx.send(f"You're already a member.")
+            await ctx.send("You're already a member.")
         if count == 1:
             member = members[0]
             await ctx.send(f"`{member}` is now a member.")
