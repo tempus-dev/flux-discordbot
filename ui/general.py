@@ -1,4 +1,5 @@
 import time
+import typing
 
 import discord
 from discord.ext import commands
@@ -131,7 +132,7 @@ To use the interactive help menu use the reactions:
 
         if not points.get(str(user.id)):
             await ctx.send(
-                f"You have no points."
+                "You have no points."
             ) if ctx.author == user else await ctx.send(f"`{user}` has no points.")
             return
 
