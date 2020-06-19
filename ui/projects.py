@@ -105,8 +105,8 @@ class Projects(commands.Cog, name="Projects"):
                         "channel still exists. "
                         "Would you like to delete it?"
                     )
-                    yes = "<:greenTick:596576670815879169>"
-                    no = "<:redTick:596576672149667840>"
+                    yes = "<:tick:723618303754502305>"
+                    no = "<:x_:723618390123610163>"
                     await message.add_reaction(yes)
                     await message.add_reaction(no)
                     reaction, user = await ctx.bot.wait_for(
@@ -144,8 +144,8 @@ class Projects(commands.Cog, name="Projects"):
             "Once you do this, everything is gone. "
             "Are you sure you want to continue?"
         )
-        yes = "<:greenTick:596576670815879169>"
-        no = "<:redTick:596576672149667840>"
+        yes = "<:tick:723618303754502305>"
+        no = "<:x_:723618390123610163>"
         await message.add_reaction(yes)
         await message.add_reaction(no)
         reaction, user = await ctx.bot.wait_for(
