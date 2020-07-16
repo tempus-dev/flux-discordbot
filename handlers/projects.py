@@ -9,8 +9,9 @@ class ProjectHandler:
     def __init__(self, guild: int):
         self.guild = str(guild)
 
-    def generate_progress_bar(self, iter, total, prefix='', suffix='',
-                              decimals=1, length=22, fill='\u2588'):
+    def generate_progress_bar(
+        self, iter, total, prefix="", suffix="", decimals=1, length=22, fill="\u2588"
+    ):
         """
         Call in a loop to create terminal progress bar
         @params:
@@ -23,15 +24,15 @@ class ProjectHandler:
             fill        - Optional : bar fill character (Str)
         """
         t = total
-        percent = ("{0:." + str(decimals) + "f}").format(100 *
-                                                         (iter / float(t)))
+        percent = ("{0:." + str(decimals) + "f}").format(100 * (iter / float(t)))
         filledLength = int(length * iter // total)
-        bar = fill * filledLength + '-' * (length - filledLength)
+        bar = fill * filledLength + "-" * (length - filledLength)
         progress_bar = "\r%s |%s| %s%% %s" % (prefix, bar, percent, suffix)
         return progress_bar
 
-    def create_project(self, owner: int, member: int, name: str, channel: int,
-                       message: int) -> dict:
+    def create_project(
+        self, owner: int, member: int, name: str, channel: int, message: int
+    ) -> dict:
         """This creates a project."""
         project = {
             "name": name,
@@ -40,7 +41,7 @@ class ProjectHandler:
             "members": [str(member)],
             "channel": str(channel),
             "message": str(message),
-            "number": None
+            "number": None,
         }
         guild_db = flux.db("guilds").find(self.guild)
         if not guild_db:
@@ -67,8 +68,8 @@ class ProjectHandler:
         guild = flux.db("guilds").find(self.guild)
 
         for i in range(len(guild.get("projects"))):
-            if guild.get("projects")[i].get('name') == name:
-                del guild['projects'][i]
+            if guild.get("projects")[i].get("name") == name:
+                del guild["projects"][i]
                 break
         flux.db("guilds").update(self.guild, guild)
 
@@ -95,45 +96,49 @@ class ProjectHandler:
         guild = flux.db("guilds").find(self.guild)
         if not (guild and guild.get("projects")):
             return
-        project = next((item for item in guild.get("projects")
-                        if item["name"] == project), None)
+        project = next(
+            (item for item in guild.get("projects") if item["name"] == project), None
+        )
         if not project:
             return
-        tasks = len(project.get('tasks'))
+        tasks = len(project.get("tasks"))
         if tasks == 0:
             return
-        completed_tasks = len([item for item in project.get(
-            "tasks") if item.get("completed")])
+        completed_tasks = len(
+            [item for item in project.get("tasks") if item.get("completed")]
+        )
         if completed_tasks == 0:
             return 0
-        return round(completed_tasks/tasks*100)
+        return round(completed_tasks / tasks * 100)
 
     def project_progress_bar(self, project: str) -> int:
         """This returns how close a project is to completion, out of 100."""
         guild = flux.db("guilds").find(self.guild)
         if not (guild and guild.get("projects")):
             return
-        project = next((item for item in guild.get("projects")
-                        if item["name"] == project), None)
+        project = next(
+            (item for item in guild.get("projects") if item["name"] == project), None
+        )
         if not project:
             return
-        tasks = len(project.get('tasks'))
+        tasks = len(project.get("tasks"))
         if tasks == 0:
             return "Create a task to have a progress bar!"
-        completed_tasks = len([item for item in project.get(
-            "tasks") if item.get("completed")])
+        completed_tasks = len(
+            [item for item in project.get("tasks") if item.get("completed")]
+        )
         # if completed_tasks == 0:
         #    return
-        return self.generate_progress_bar(completed_tasks, tasks,
-                                          prefix="Project Progress:",
-                                          suffix="Complete")
+        return self.generate_progress_bar(
+            completed_tasks, tasks, prefix="Project Progress:", suffix="Complete"
+        )
 
     def add_project_members(self, project: str, members: list) -> dict:
         """This adds a project member to the member list."""
         guild_db = flux.db("guilds").find(self.guild)
         members = [str(member) for member in members]
         project = self.find_project(project)
-        current_owners = project.get('members')
+        current_owners = project.get("members")
         current_owners.extend(members)
         guild_db["projects"][project.get("number")]["members"] = current_owners
         flux.db("guilds").update(self.guild, guild_db)
@@ -141,10 +146,11 @@ class ProjectHandler:
         flux.dispatch("project_member_add", self.guild, project, members)
         return project
 
-    def create_task(self, project: str, name: str, value: int,
-                    due: datetime.datetime) -> dict:
+    def create_task(
+        self, project: str, name: str, value: int, due: datetime.datetime
+    ) -> dict:
         """This creates a task within a project."""
-        start_ = (datetime.datetime.now() + datetime.timedelta(minutes=0))
+        start_ = datetime.datetime.now() + datetime.timedelta(minutes=0)
         task = {
             "name": name,
             "start_timestamp": start_,
@@ -153,7 +159,7 @@ class ProjectHandler:
             "assigned": [],
             "value": value,
             "project": project,
-            "number": None
+            "number": None,
         }
         project = self.find_project(project)
         project.get("tasks").append(task)
@@ -169,19 +175,20 @@ class ProjectHandler:
         """This searches for a task within a given project,
         within a given guild."""
         project = self.find_project(project)
-        task = next((item for item in project.get(
-            "tasks") if item["name"] == task), None)
+        task = next(
+            (item for item in project.get("tasks") if item["name"] == task), None
+        )
         return task
 
-    def update_task_members(self, project: str, task: str,
-                            member: list) -> dict:
+    def update_task_members(self, project: str, task: str, member: list) -> dict:
         """This assigns a member to a task."""
         task = self.find_task(project, task)
         member = [str(x) for x in member]
         project = self.find_project(task.get("project"))
         guild_db = flux.db("guilds").find(self.guild)
-        guild_db["projects"][project.get("number")]["tasks"][task.get(
-            "number")]["assigned"].extend(member)
+        guild_db["projects"][project.get("number")]["tasks"][task.get("number")][
+            "assigned"
+        ].extend(member)
         flux.db("guilds").update(self.guild, guild_db)
         flux.dispatch("task_member_update", task, int(self.guild), member)
         return task
@@ -190,12 +197,12 @@ class ProjectHandler:
         """This modifies the value of a task."""
         task = self.find_task(project, task)
         guild_db = flux.db("guilds").find(self.guild)
-        guild_db["projects"][project.get(
-            "number")]["tasks"][task.get("number")]["value"] += value
+        guild_db["projects"][project.get("number")]["tasks"][task.get("number")][
+            "value"
+        ] += value
         flux.db("guilds").update(self.guild, guild_db)
 
-    def update_task_status(self, project: str, task: str,
-                           status: bool) -> dict:
+    def update_task_status(self, project: str, task: str, status: bool) -> dict:
         """This marks a task as completed."""
         task = self.find_task(project, task)
         if task.get("completed") == status:
@@ -207,19 +214,19 @@ class ProjectHandler:
             return
         guild_db = flux.db("guilds").find(self.guild)
         i = 0
-        for iteration in guild_db['projects']:
+        for iteration in guild_db["projects"]:
             i += 1
-            if iteration['name'] == project['name']:
+            if iteration["name"] == project["name"]:
                 print(iteration)
                 break
         j = 0
-        for iteration in project['tasks']:
+        for iteration in project["tasks"]:
             j += 1
-            if iteration['name'] == task['name']:
+            if iteration["name"] == task["name"]:
                 print(iteration)
                 break
         print(f"i: {i} j: {j}")
-        guild_db["projects"][i-1]["tasks"][j-1]["completed"] = status
+        guild_db["projects"][i - 1]["tasks"][j - 1]["completed"] = status
         flux.db("guilds").update(self.guild, guild_db)
         if status is True:
             flux.dispatch("task_complete", self.guild, task)

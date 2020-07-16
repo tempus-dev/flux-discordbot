@@ -21,7 +21,7 @@ class Points:
                 task_name = task.get("name")
                 flux.db("logs").insert(
                     f"point_addition_{member}_{task_name}",
-                    {"time": datetime.datetime.now(), "amount": points}
+                    {"time": datetime.datetime.now(), "amount": points},
                 )
             else:
                 current_points = guild.get("points")[member]
@@ -31,7 +31,8 @@ class Points:
                 task_name = task.get("name")
                 flux.db("logs").insert(
                     f"point_addition_{member}_{task_name}",
-                    {"time": datetime.datetime.now(), "amount": points})
+                    {"time": datetime.datetime.now(), "amount": points},
+                )
 
     def remove_points(self, guild_id: int, task: dict, points: int):
         guild = flux.db("guilds").find(str(guild_id))
@@ -48,7 +49,7 @@ class Points:
                 points = points - points - points
                 flux.db("logs").insert(
                     f"point_removal_{member}_{task_name}",
-                    {"time": datetime.datetime.now(), "amount": points}
+                    {"time": datetime.datetime.now(), "amount": points},
                 )
             else:
                 guild["points"][member] -= points
@@ -56,11 +57,10 @@ class Points:
                 task_name = task.get("name")
                 flux.db("logs").insert(
                     f"point_removal_{member}_{task_name}",
-                    {"time": datetime.datetime.now(), "amount": points}
+                    {"time": datetime.datetime.now(), "amount": points},
                 )
 
-    def calculate_points(self, start_timestamp, end_timestamp: float,
-                         value: int):
+    def calculate_points(self, start_timestamp, end_timestamp: float, value: int):
         start = datetime.datetime.fromtimestamp(start_timestamp)
         end = datetime.datetime.fromtimestamp(end_timestamp)
         total_days = (end - start).days

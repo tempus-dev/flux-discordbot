@@ -18,16 +18,16 @@ class Insights(commands.Cog):
         if not db.find(cmd):
             db.insert(cmd, {"usage": 1})
             return
-        usage = db.find(cmd)['usage']
+        usage = db.find(cmd)["usage"]
         db.update(cmd, {"usage": usage + 1})
 
     async def log_error(self, error) -> str:
-        db = self.bot.db('logs')
+        db = self.bot.db("logs")
         if not db.find("errors"):
             db.insert("errors", {})
         lower = string.ascii_lowercase
         digits = string.digits
-        uuid = ''.join(sysrand().choice(lower + digits) for _ in range(8))
+        uuid = "".join(sysrand().choice(lower + digits) for _ in range(8))
         err = {
             uuid: {
                 "cmd": None,
@@ -35,12 +35,12 @@ class Insights(commands.Cog):
                 "author": None,
                 "channel": None,
                 "guild": None,
-                "time": None
+                "time": None,
             }
         }
         db.update("errors", err)
         embed = discord.Embed()
-        embed.title = f"Non command exception occurred"
+        embed.title = "Non command exception occurred"
         embed.description = f"```py\n{error}\n```"
         embed.timestamp = dt.now()  # TODO: confirm that I can pass dt.now()
         embed.set_author(name=f"Error ID: {uuid}")
@@ -50,24 +50,23 @@ class Insights(commands.Cog):
             await channel.send(embed=embed)
         except discord.errors.HTTPException:
             desc = embed.description
-            first = desc[:2044] + '\n```'
-            second = '```py\n' + desc[2044:]
+            first = desc[:2044] + "\n```"
+            second = "```py\n" + desc[2044:]
             embed.description = first
             await channel.send(embed=embed)
-            embed = discord.Embed(
-                title="Exception continued", description=second)
+            embed = discord.Embed(title="Exception continued", description=second)
             await channel.send(embed=embed)
 
         return uuid
 
     async def log_cmd_error(self, ctx, error) -> str:
         cmd = ctx.command.qualified_name
-        db = self.bot.db('logs')
+        db = self.bot.db("logs")
         if not db.find("errors"):
             db.insert("errors", {})
         lower = string.ascii_lowercase
         digits = string.digits
-        uuid = ''.join(sysrand().choice(lower + digits) for _ in range(8))
+        uuid = "".join(sysrand().choice(lower + digits) for _ in range(8))
         err = {
             uuid: {
                 "cmd": cmd,
@@ -75,7 +74,7 @@ class Insights(commands.Cog):
                 "author": str(ctx.author.id),
                 "channel": str(ctx.channel.id),
                 "guild": str(ctx.guild.id),
-                "time": str(ctx.message.created_at)
+                "time": str(ctx.message.created_at),
             }
         }
         db.update("errors", err)
@@ -93,12 +92,11 @@ class Insights(commands.Cog):
             await channel.send(embed=embed)
         except discord.errors.HTTPException:
             desc = embed.description
-            first = desc[:2044] + '\n```'
-            second = '```py\n' + desc[2044:]
+            first = desc[:2044] + "\n```"
+            second = "```py\n" + desc[2044:]
             embed.description = first
             await channel.send(embed=embed)
-            embed = discord.Embed(
-                title="Exception continued", description=second)
+            embed = discord.Embed(title="Exception continued", description=second)
             await channel.send(embed=embed)
 
         return uuid
@@ -129,10 +127,10 @@ class Insights(commands.Cog):
 
     @commands.command()
     async def error(self, ctx, uuid: str) -> None:
-        db = self.bot.db('logs')
+        db = self.bot.db("logs")
         if not db.find("errors"):
             await ctx.send("Doesn't exist.")
-        elif not db.find('errors').get(uuid):
+        elif not db.find("errors").get(uuid):
             await ctx.send("Doesn't exist.")
         else:
             error = db.find("errors").get(uuid)
@@ -140,8 +138,7 @@ class Insights(commands.Cog):
             embed = discord.Embed()
             embed.title = f"Exception in command {cmd}"
             embed.description = f"```py\n{error.get('error')}\n```"
-            embed.timestamp = dt.strptime(error.get("time"),
-                                          "%Y-%m-%d %H:%M:%S.%f")
+            embed.timestamp = dt.strptime(error.get("time"), "%Y-%m-%d %H:%M:%S.%f")
             errchn = error.get("channel")
             errusr = error.get("author")
             embed.set_footer(text=f"Author: {errusr} • Channel: {errchn}")
@@ -152,7 +149,8 @@ class Insights(commands.Cog):
         embed = discord.Embed(title=f"Added to guild {guild.name}.")
         embed.set_footer(
             text=f"Member count: {len(guild.members)} • Guild ID: {guild.id}"
-            f" • {self.bot.user.name} is in {len(self.bot.guilds)}")
+            f" • {self.bot.user.name} is in {len(self.bot.guilds)}"
+        )
         channel = await self.get_server_logs()
         msg = await channel.send("-")
         await msg.delete()
@@ -164,7 +162,8 @@ class Insights(commands.Cog):
         embed = discord.Embed(title=f"Removed from guild {guild.name}.")
         embed.set_footer(
             text=f"Member count: {len(guild.members)} • Guild ID: {guild.id}"
-            f" • {self.bot.user.name} is in {len(self.bot.guilds)}")
+            f" • {self.bot.user.name} is in {len(self.bot.guilds)}"
+        )
         channel = await self.get_server_logs()
         msg = await channel.send("-")
         await msg.delete()
@@ -178,15 +177,16 @@ class Insights(commands.Cog):
     async def on_command(self, ctx) -> None:
         embed = discord.Embed(
             title=f"Command `{ctx.command.qualified_name}` was executed.",
-            timestamp=ctx.message.created_at)
+            timestamp=ctx.message.created_at,
+        )
         embed.timestamp = ctx.message.created_at
         embed.add_field(name="Author", value=ctx.author, inline=True)
         if ctx.guild:
             embed.add_field(name="Guild", value=ctx.guild.name, inline=True)
-            embed.add_field(name="Channel", value=ctx.channel.name,
-                            inline=True)
+            embed.add_field(name="Channel", value=ctx.channel.name, inline=True)
             embed.set_footer(
-                text=f"{ctx.author.id} • {ctx.guild.id} • {ctx.channel.id}")
+                text=f"{ctx.author.id} • {ctx.guild.id} • {ctx.channel.id}"
+            )
         else:
             embed.add_field(name="Channel", value="DMs", inline=True)
             embed.set_footer(text=f"{ctx.author.id}")

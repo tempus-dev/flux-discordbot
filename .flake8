@@ -1,0 +1,4 @@
+[flake8]
+# Flux uses Black for code formatting
+ignore = E203, E266, E501, W503
+exclude = .venv, venv

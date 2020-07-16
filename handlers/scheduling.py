@@ -5,6 +5,7 @@ from typing import Coroutine
 
 class Scheduler:
     """ Schedules a callback function. """
+
     def __init__(self, duration: int, callback: Coroutine):
         self._duration = duration
         self._callback = callback
