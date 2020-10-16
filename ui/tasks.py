@@ -32,7 +32,7 @@ class Tasks(commands.Cog, name="Tasks"):
     ) -> None:
         """This creates a task.
         This command is limited to the owner of the provided project.
-        
+
         To set something as due, you can put s for seconds, m for minutes,
         h for hours, and w for weeks! These are mandatory. E.g 10 minutes or 1w."""
         reward = points_gained_when_completed  # Helpful params!
