@@ -31,16 +31,21 @@ class Tasks(commands.Cog, name="Tasks"):
         due: str,
     ) -> None:
         """This creates a task.
-        This command is limited to the owner of the provided project."""
+        This command is limited to the owner of the provided project.
+        
+        To set something as due, you can put s for seconds, m for minutes,
+        h for hours, and w for weeks! These are mandatory. E.g 10 minutes or 1w."""
         reward = points_gained_when_completed  # Helpful params!
+        due = "".join(due)
+        due = ctx.bot.parse_time(due)
+        if not due:
+            raise commands.BadArgument("Time could not be parsed.")
         if not ctx.projects.find_project(project):
-            await ctx.send("This project could not be found.")
+            await ctx.send("That project could not be found.")
             return
         if str(ctx.author.id) not in ctx.projects.find_project(project).get("owner"):
             await ctx.send("You can't create tasks on this project.")
             return
-        due = "".join(due)
-        due = ctx.bot.parse_time(due)
         task = ctx.projects.create_task(project, name, reward, due)
         total_seconds = (datetime.datetime.now() - due).seconds
 
