@@ -33,6 +33,9 @@ class Tasks(commands.Cog, name="Tasks"):
         """This creates a task.
         This command is limited to the owner of the provided project."""
         reward = points_gained_when_completed  # Helpful params!
+        if not ctx.projects.find_project(project):
+            await ctx.send("This project could not be found.")
+            return
         if str(ctx.author.id) not in ctx.projects.find_project(project).get("owner"):
             await ctx.send("You can't create tasks on this project.")
             return
