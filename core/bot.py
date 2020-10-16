@@ -45,7 +45,7 @@ def parse_time(time_re: str) -> datetime.datetime:
         time_re,
     )  # noqa: E501
 
-    if not time_re: # no matches
+    if not time_re:  # no matches
         return time_re
 
     time_re = time_re.groupdict()
