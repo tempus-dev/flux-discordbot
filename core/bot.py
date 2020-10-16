@@ -64,7 +64,7 @@ def parse_time(time_re: str) -> datetime.datetime:
         seconds=time_re.get("seconds"),
     )
 
-    time_re = datetime.datetime.now() - time_re
+    time_re = datetime.datetime.now() + time_re
 
     return time_re
 
