@@ -207,7 +207,7 @@ class Projects(commands.Cog, name="Projects"):
             await ctx.send(f"`{members[0]}` and `{members[1]} `" "are now members.")
         else:
             last_member = members[count - 1]
-            members = members.pop(count - 1)
+            members.pop(count - 1)
             string = "`"
             members = string + ", ".join(str(x) for x in members) + string
             members = members + f" and `{last_member}`"
@@ -236,7 +236,7 @@ class Projects(commands.Cog, name="Projects"):
             )
         else:
             last_member = members[count - 1]
-            members = members.pop(count - 1)
+            members.pop(count - 1)
             string = "`"
             members = string + "`, ".join(str(x) for x in members) + string
             members = members + f" and `{last_member}`"

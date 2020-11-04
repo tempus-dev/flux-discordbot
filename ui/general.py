@@ -160,11 +160,11 @@ class General(commands.Cog, name="General"):
             )
             return
         if not duration:
-            raise commands.MissingRequiredArgument(
-                ctx.commmand.clean_params["duration"]
-            )
-        duration = " ".join(duration)
+            raise commands.MissingRequiredArgument(ctx.command.clean_params["duration"])
+        duration = "".join(duration)
         duration = ctx.bot.parse_time(duration)
+        if not duration:
+            raise commands.BadArgument("Time could not be parsed.")
         await ReminderService(ctx.bot).new_reminder(ctx.author.id, to_remind, duration)
 
         return await ctx.send("Reminder set!")
