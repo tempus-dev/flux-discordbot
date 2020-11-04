@@ -160,9 +160,7 @@ class General(commands.Cog, name="General"):
             )
             return
         if not duration:
-            raise commands.MissingRequiredArgument(
-                ctx.command.clean_params["duration"]
-            )
+            raise commands.MissingRequiredArgument(ctx.command.clean_params["duration"])
         duration = "".join(duration)
         duration = ctx.bot.parse_time(duration)
         if not duration:
